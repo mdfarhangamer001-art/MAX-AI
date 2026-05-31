@@ -385,7 +385,7 @@ Use responsibly. The maintainers are not liable for misuse.
 # 👨‍💻 Architect
 
 **Harsh Pandey**  
-AI Systems Engineer and Project Leader
+AI Systems Engineer and Project Leader +
 
 Instagram: [@201Harshs](https://www.instagram.com/201harshs/)
 GitHub: [@201Harsh](https://github.com/201Harsh)
@@ -405,7 +405,7 @@ MIT License — see LICENSE file.
 
 > _System Online._
 
-# Made with ❤️ by [Harsh Pandey](https://instagram.com/201Harshs)
+# Made with ❤️ by [Harsh](https://instagram.com/201Harshs)
 
 
 ---
