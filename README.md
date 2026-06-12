@@ -234,7 +234,7 @@ IRIS is forged using a high-performance stack combining web technologies with de
 ### 1. Clone Repo
 
 ```bash
-git clone https://github.com/201Harsh/IRIS-AI.git
+git clone https://github.com/IRISX-AI/IRIS-AI
 cd IRIS-AI
 ```
 
