@@ -38,6 +38,7 @@
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
     "clipboardy": "^5.3.1",
+    "decibri": "^4.4.2",
     "electron-store": "^11.0.2",
     "electron-updater": "^6.8.9",
     "face-api.js": "^0.22.2",
