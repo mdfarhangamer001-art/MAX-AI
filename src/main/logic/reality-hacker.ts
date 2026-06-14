@@ -1,9 +1,7 @@
 import { BrowserWindow } from 'electron'
 
-// Track the active window at the module level
 let hackerWindow: BrowserWindow | null = null
 
-// Exported directly to trigger the website override
 export async function hackWebsite({
   url,
   mode,
