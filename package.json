@@ -14,7 +14,7 @@
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
-    "postinstall": "node -e \"try { require('child_process').execSync('electron-builder install-app-deps', { stdio: 'inherit' }); } catch (e) { console.warn('Warning: electron-builder install-app-deps failed to rebuild native modules. Bypassing...'); }\"",
+    "postinstall": "node -e \"try { require('child_process').execSync('electron-builder install-app-deps', { stdio: 'pipe' }); } catch (e) { console.warn('Warning: electron-builder install-app-deps failed to rebuild native modules (likely due to spaces in the path or missing python tools). Bypassing...'); }\"",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
