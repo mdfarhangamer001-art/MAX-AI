@@ -50,6 +50,8 @@ if (process.contextIsolated) {
       }
     })
     contextBridge.exposeInMainWorld('api', api)
+
+    contextBridge.exposeInMainWorld('iris', irisAPI)
   } catch (error) {}
 } else {
   // @ts-ignore (define in dts)
