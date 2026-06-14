@@ -1,10 +1,13 @@
 import AxiosInstance from '../config/AxiosInstance'
+import { getMemoryContextString } from '../hooks/iris-memory'
 import { getLiveLocation } from '../logic/live-location'
 
 let cloudUser = {
   name: 'Iris User',
   email: 'Not linked'
 }
+
+const pastContext = await getMemoryContextString()
 
 const locationData = await getLiveLocation()
 const locStr = locationData?.fullString || 'Unknown Location'
