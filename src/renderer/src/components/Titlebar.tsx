@@ -96,7 +96,7 @@ export default function TitleBar() {
       </div>
 
       {/* ── RIGHT: Scaled Windows Controls ── */}
-      <div className="flex h-full min-w-[200px] justify-end no-drag">
+      <div className="flex h-full min-w-50 justify-end no-drag">
         {!isMac ? (
           <div className="flex h-full items-center">
             <button
