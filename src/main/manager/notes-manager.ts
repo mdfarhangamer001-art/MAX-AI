@@ -2,7 +2,6 @@ import { app } from 'electron'
 import fs from 'fs'
 import path from 'path'
 
-// Internal helper to ensure directory exists safely at runtime
 function ensureNotesDir(): string {
   const notesDir = path.resolve(app.getPath('userData'), 'Notes')
   if (!fs.existsSync(notesDir)) {
@@ -11,7 +10,6 @@ function ensureNotesDir(): string {
   return notesDir
 }
 
-// Exported directly to save a new markdown note
 export async function saveNote({ title, content }: { title: string; content: string }) {
   try {
     const notesDir = ensureNotesDir()
@@ -28,7 +26,6 @@ export async function saveNote({ title, content }: { title: string; content: str
   }
 }
 
-// Exported directly to retrieve and parse all saved notes
 export async function getNotes() {
   try {
     const notesDir = ensureNotesDir()
@@ -54,7 +51,6 @@ export async function getNotes() {
   }
 }
 
-// Exported directly to delete a specific note
 export async function deleteNote(filename: string): Promise<boolean> {
   try {
     const notesDir = ensureNotesDir()
