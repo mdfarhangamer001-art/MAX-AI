@@ -43,10 +43,10 @@ const IRIS = ({
   const tabs = [
     { id: 'DASHBOARD', label: 'Command', icon: <RiLayoutGridLine size={16} /> },
     { id: 'Macros', label: 'Macros', icon: <RiBrainLine size={16} /> },
-    { id: 'NOTES', label: 'Memory', icon: <RiFolderOpenLine size={16} /> },
+    { id: 'NOTES', label: 'Notes', icon: <RiFolderOpenLine size={16} /> },
     { id: 'GALLERY', label: 'Gallery', icon: <RiImageLine size={16} /> },
     { id: 'PHONE', label: 'Mobile', icon: <RiPhoneLine size={16} /> },
-    { id: 'SETTINGS', label: 'Config', icon: <RiSettings4Line size={16} /> }
+    { id: 'SETTINGS', label: 'Settings', icon: <RiSettings4Line size={16} /> }
   ]
 
   return (
