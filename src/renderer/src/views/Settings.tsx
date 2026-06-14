@@ -75,7 +75,7 @@ export default function SettingsView({ isSystemActive }: SettingsProps) {
   const [enrollStatus, setEnrollStatus] = useState('')
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  const [appVersion, setAppVersion] = useState('1.5.0')
+  const [appVersion, setAppVersion] = useState('1.5.1')
   const [updateStatus, setUpdateStatus] = useState<
     'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'error'
   >('idle')
