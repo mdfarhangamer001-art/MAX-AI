@@ -86,7 +86,7 @@ export default function TitleBar() {
 
         {/* Status Text */}
         <span className="text-[9px] font-mono tracking-[0.2em] text-zinc-300 uppercase">
-          Neural Core
+          AI Assistant
         </span>
 
         <span className="text-[10px] text-zinc-700">|</span>
