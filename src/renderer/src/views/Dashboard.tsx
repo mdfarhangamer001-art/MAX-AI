@@ -143,10 +143,10 @@ export default function Dashboard({
                   }`}
                 >
                   {systemStatus === 'CONNECTING'
-                    ? 'HANDSHAKE...'
+                    ? 'IRIS ...'
                     : isConnected
-                      ? 'LINK ACTIVE'
-                      : 'STANDBY'}
+                      ? 'IRIS Online'
+                      : 'IRIS Offline'}
                 </span>
                 <span className="text-[8px] text-zinc-500 tracking-[0.2em] font-mono mt-0.5 uppercase">
                   {isConnected ? 'Neural Network' : 'Awaiting Cmd'}
