@@ -1,6 +1,5 @@
 import { ipcMain } from 'electron'
 
-// Import your newly refactored direct functions
 import { getNotes, saveNote, deleteNote } from '../manager/notes-manager'
 import {
   getGallery,
@@ -9,12 +8,8 @@ import {
   openImageLocation,
   saveImageExternal
 } from '../logic/gallery-manager'
-// Import any other functions your UI explicitly calls (like adb, workflows, etc.)
 
 export default function registerFrontendIPC() {
-  // --------------------------------------------------
-  // NOTES UI HANDLERS
-  // --------------------------------------------------
   ipcMain.handle('get-notes', async () => {
     return await getNotes()
   })
@@ -27,9 +22,6 @@ export default function registerFrontendIPC() {
     return await deleteNote(filename)
   })
 
-  // --------------------------------------------------
-  // GALLERY UI HANDLERS
-  // --------------------------------------------------
   ipcMain.handle('get-gallery', async () => {
     return await getGallery()
   })
@@ -50,6 +42,4 @@ export default function registerFrontendIPC() {
   ipcMain.handle('save-image-external', async (_event, sourcePath) => {
     return await saveImageExternal(sourcePath)
   })
-
-  // Add any other handlers here that your React frontend uses (e.g., 'get-workflows', 'get-running-apps')
 }
