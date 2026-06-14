@@ -58,36 +58,60 @@ export default function RightPanel() {
   }, [chatHistory, activeModelText])
 
   return (
-    <div className="h-full min-h-0 flex flex-col bg-[#0a0a0a]/60 backdrop-blur-xl border border-white/8 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden">
-      <div className="p-4 border-b border-white/5 flex justify-between items-center shrink-0">
-        <span className="text-[9px] text-slate-500 tracking-[0.2em] font-mono uppercase">
-          Transcript
-        </span>
-        <span className="text-[8px] text-[#00ff41] tracking-widest uppercase font-mono animate-pulse">
-          Live-Log
-        </span>
+    <div className="h-full min-h-0 flex flex-col bg-black/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-white/5 flex justify-between items-center shrink-0">
+        <h2 className="text-sm font-semibold text-white/80 tracking-wide">Conversation</h2>
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+          </span>
+          <span className="text-xs font-medium text-green-400/90">Live</span>
+        </div>
       </div>
 
+      {/* Messages area with custom slim scrollbar */}
       <div
         ref={scrollRef}
-        className="flex-1 min-h-0 p-4 overflow-y-auto scrollbar-small flex flex-col gap-3 font-mono text-[11px] custom-scrollbar scroll-smooth"
+        className="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-4 scroll-smooth
+          [&::-webkit-scrollbar]:w-1.5
+          [&::-webkit-scrollbar-track]:bg-transparent
+          [&::-webkit-scrollbar-thumb]:bg-white/10
+          [&::-webkit-scrollbar-thumb]:rounded-full
+          hover:[&::-webkit-scrollbar-thumb]:bg-green-500/40"
       >
+        {/* Empty state */}
         {chatHistory.length === 0 && activeModelText === '' && (
-          <div className="text-[9px] text-slate-600 text-center uppercase tracking-wider my-2 opacity-50">
-            [System Notice]: Awaiting Link...
+          <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-60">
+            <svg
+              className="w-12 h-12 text-white/10"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+            <p className="text-sm text-white/30 font-medium">Waiting for conversation to start…</p>
           </div>
         )}
 
+        {/* Chat messages */}
         {chatHistory.map((msg, idx) => (
           <div
             key={idx}
-            className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[85%] p-3 rounded-md leading-relaxed ${
+              className={`max-w-[80%] p-3.5 rounded-2xl text-sm leading-relaxed shadow-lg ${
                 msg.role === 'user'
-                  ? 'bg-[#00ff41]/10 border border-[#00ff41]/20 text-[#00ff41] text-right rounded-br-sm'
-                  : 'bg-white/3 border border-white/5 text-slate-300 rounded-bl-sm'
+                  ? 'bg-green-600/20 text-green-100 border border-green-500/20 rounded-br-md'
+                  : 'bg-white/5 text-gray-200 border border-white/5 rounded-bl-md'
               }`}
             >
               {msg.text}
@@ -95,11 +119,12 @@ export default function RightPanel() {
           </div>
         ))}
 
+        {/* Live streaming model message */}
         {activeModelText && (
-          <div className="flex flex-col items-start">
-            <div className="max-w-[85%] p-3 rounded-md leading-relaxed bg-white/3 border border-white/5 text-slate-300 rounded-bl-sm">
+          <div className="flex justify-start">
+            <div className="max-w-[80%] p-3.5 rounded-2xl bg-white/5 text-gray-200 border border-white/5 rounded-bl-md text-sm leading-relaxed shadow-lg">
               {activeModelText}
-              <span className="inline-block w-1.5 h-3 ml-1 bg-[#00ff41] animate-pulse align-middle"></span>
+              <span className="inline-block w-1.5 h-4 ml-1 bg-green-400 rounded-full animate-pulse align-middle"></span>
             </div>
           </div>
         )}

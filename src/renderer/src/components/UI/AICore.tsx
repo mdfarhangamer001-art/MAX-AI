@@ -2,145 +2,353 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
 
-const DualSphere = ({ isConnected, isSpeaking }: { isConnected: boolean; isSpeaking: boolean }) => {
-  const groupRef = useRef<THREE.Group>(null)
-  const pointsRef = useRef<THREE.Points>(null)
-  const innerRef = useRef<THREE.Mesh>(null)
+// ─────────────────────────────────────────────────────
+// Color tokens — aligned with IRIS design system
+// ─────────────────────────────────────────────────────
+const C = {
+  idle: new THREE.Color('#39ff14'), // pure neon green
+  active: new THREE.Color('#00ffff'), // electric cyan
+  dimIdle: new THREE.Color('#0b3300'), // deep dim green for outer shell
+  ring: new THREE.Color('#39ff14'),
+  ringGlow: new THREE.Color('#ccffb3') // bright neon glow
+}
 
-  const timeRef = useRef(0)
-  const animState = useRef({ volume: 0 })
+// ─────────────────────────────────────────────────────
+// Particle shell — one concentric layer
+// ─────────────────────────────────────────────────────
+interface ShellProps {
+  count: number
+  radius: number
+  pointSize: number
+  rotSpeedY: number
+  rotSpeedZ: number
+  rotSpeedX: number
+  baseOpacity: number
+  isConnected: boolean
+  isSpeaking: boolean
+  timeOffset: number
+}
 
-  const count = 4000
-  const { positions, originalPositions, spreadFactors } = useMemo(() => {
+function ParticleShell({
+  count,
+  radius,
+  pointSize,
+  rotSpeedY,
+  rotSpeedZ,
+  rotSpeedX,
+  baseOpacity,
+  isConnected,
+  isSpeaking,
+  timeOffset
+}: ShellProps) {
+  const ref = useRef<THREE.Points>(null)
+  const volRef = useRef(0)
+
+  const { positions, original, seeds } = useMemo(() => {
     const pos = new Float32Array(count * 3)
     const orig = new Float32Array(count * 3)
-    const spread = new Float32Array(count)
+    const s = new Float32Array(count * 2) // seed x, seed y for per-particle noise
 
     for (let i = 0; i < count; i++) {
-      const x = Math.random() * 2 - 1
-      const y = Math.random() * 2 - 1
-      const z = Math.random() * 2 - 1
+      // Uniform sphere distribution (Marsaglia method)
+      let x, y, z, d
+      do {
+        x = Math.random() * 2 - 1
+        y = Math.random() * 2 - 1
+        z = Math.random() * 2 - 1
+        d = x * x + y * y + z * z
+      } while (d > 1 || d === 0)
+      const n = 1 / Math.sqrt(d)
+      const px = x * n * radius
+      const py = y * n * radius
+      const pz = z * n * radius
 
-      const vector = new THREE.Vector3(x, y, z)
-      vector.normalize().multiplyScalar(1.5)
+      pos[i * 3] = px
+      pos[i * 3 + 1] = py
+      pos[i * 3 + 2] = pz
+      orig[i * 3] = px
+      orig[i * 3 + 1] = py
+      orig[i * 3 + 2] = pz
 
-      pos[i * 3] = vector.x
-      pos[i * 3 + 1] = vector.y
-      pos[i * 3 + 2] = vector.z
-
-      orig[i * 3] = vector.x
-      orig[i * 3 + 1] = vector.y
-      orig[i * 3 + 2] = vector.z
-
-      spread[i] = Math.random()
+      s[i * 2] = Math.random() * Math.PI * 2 // phase offset
+      s[i * 2 + 1] = 0.6 + Math.random() * 0.8 // amplitude weight
     }
-    return { positions: pos, originalPositions: orig, spreadFactors: spread }
-  }, [])
+    return { positions: pos, original: orig, seeds: s }
+  }, [count, radius])
 
-  const colorIdle = useMemo(() => new THREE.Color('#00ff41'), [])
-  const colorActive = useMemo(() => new THREE.Color('#ffffff'), [])
-  const currentColor = useMemo(() => new THREE.Color(), [])
+  const colorBuf = useMemo(() => {
+    const c = new Float32Array(count * 3)
+    for (let i = 0; i < count; i++) {
+      c[i * 3] = C.idle.r
+      c[i * 3 + 1] = C.idle.g
+      c[i * 3 + 2] = C.idle.b
+    }
+    return c
+  }, [count])
 
-  useFrame((state, delta) => {
-    if (!state) return
-    if (!groupRef.current || !pointsRef.current || !innerRef.current) return
+  const blendColor = useMemo(() => new THREE.Color(), [])
 
-    timeRef.current += delta
-    const t = timeRef.current
+  useFrame((_, delta) => {
+    if (!ref.current) return
+    const pts = ref.current
+    const geo = pts.geometry
+    const mat = pts.material as THREE.PointsMaterial
 
-    const targetScale = !isConnected ? 0.5 : isSpeaking ? 0.7 : 0.65
-    groupRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1)
+    // Rotation — each shell on unique axes
+    pts.rotation.y += delta * rotSpeedY
+    pts.rotation.z += delta * rotSpeedZ
+    pts.rotation.x += delta * rotSpeedX
 
-    pointsRef.current.rotation.y += delta * 0.05
-    pointsRef.current.rotation.z += delta * 0.05
-    innerRef.current.rotation.y -= delta * 0.2
-
-    let simulatedVolume = 0
+    // Volume simulation
+    const t = performance.now() * 0.001 + timeOffset
+    let targetVol = 0
     if (isSpeaking) {
-      const pulse = Math.pow(Math.abs(Math.sin(t * 12) * Math.cos(t * 8)), 2)
-      const noise = Math.random() * 0.3
-      simulatedVolume = pulse + noise
+      const pulse = Math.pow(Math.abs(Math.sin(t * 10) * Math.cos(t * 6.3)), 1.6)
+      targetVol = pulse * 0.7 + Math.random() * 0.15
     } else if (isConnected) {
-      simulatedVolume = Math.abs(Math.sin(t * 2)) * 0.05
+      targetVol = Math.abs(Math.sin(t * 1.8)) * 0.04
     }
+    volRef.current = THREE.MathUtils.lerp(volRef.current, targetVol, 0.18)
+    const vol = volRef.current
 
-    animState.current.volume = THREE.MathUtils.lerp(animState.current.volume, simulatedVolume, 0.3)
-    const currentVolume = animState.current.volume
+    // Color lerp: idle green → speaking cyan
+    blendColor.lerpColors(C.idle, C.active, vol * 1.8)
+    mat.color.copy(blendColor)
 
-    currentColor.lerpColors(colorIdle, colorActive, currentVolume * 1.5)
-    ;(pointsRef.current.material as THREE.PointsMaterial).color.copy(currentColor)
-    ;(pointsRef.current.material as THREE.PointsMaterial).opacity = isConnected ? 1.02 : 0.4
+    // Opacity
+    const targetOpacity = isConnected ? baseOpacity + vol * 0.35 : baseOpacity * 0.35
+    mat.opacity = THREE.MathUtils.lerp(mat.opacity, targetOpacity, 0.08)
 
-    const currentPos = pointsRef.current.geometry.attributes.position.array as Float32Array
-
+    // Per-particle displacement — wave noise, not uniform expand
+    const posArr = geo.attributes.position.array as Float32Array
     for (let i = 0; i < count; i++) {
       const ix = i * 3
-      const iy = i * 3 + 1
-      const iz = i * 3 + 2
+      const phase = seeds[i * 2]
+      const weight = seeds[i * 2 + 1]
 
-      const expansion = 1 + currentVolume * spreadFactors[i] * 0.5
+      // Wave displacement along original normal direction
+      const waveA = Math.sin(t * 8.5 + phase) * vol * weight * 0.18
+      const waveB = Math.cos(t * 5.2 + phase * 0.7) * vol * weight * 0.09
 
-      currentPos[ix] = originalPositions[ix] * expansion
-      currentPos[iy] = originalPositions[iy] * expansion
-      currentPos[iz] = originalPositions[iz] * expansion
+      const ox = original[ix]
+      const oy = original[ix + 1]
+      const oz = original[ix + 2]
+      const len = Math.sqrt(ox * ox + oy * oy + oz * oz) || 1
+
+      posArr[ix] = ox + (ox / len) * (waveA + waveB)
+      posArr[ix + 1] = oy + (oy / len) * (waveA - waveB * 0.5)
+      posArr[ix + 2] = oz + (oz / len) * waveB
     }
 
-    pointsRef.current.geometry.attributes.position.needsUpdate = true
-    pointsRef.current.geometry.computeBoundingSphere()
-
-    const coreBeat = isSpeaking ? Math.sin(t * 15) * 0.03 : Math.sin(t * 2) * 0.01
-    innerRef.current.scale.setScalar(1 + coreBeat)
+    geo.attributes.position.needsUpdate = true
+    geo.computeBoundingSphere()
   })
 
-  const innerColor = isConnected ? '#2b7308' : '#0b1f08'
+  return (
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          args={[positions, 3]}
+          usage={THREE.DynamicDrawUsage}
+        />
+        <bufferAttribute attach="attributes-color" args={[colorBuf, 3]} />
+      </bufferGeometry>
+      <pointsMaterial
+        size={pointSize}
+        transparent
+        opacity={baseOpacity * 0.5}
+        sizeAttenuation
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+        vertexColors={false}
+      />
+    </points>
+  )
+}
+
+// ─────────────────────────────────────────────────────
+// Orbital ring — torus on a tilted axis
+// ─────────────────────────────────────────────────────
+function OrbitalRing({
+  radius,
+  tube,
+  tilt,
+  rotSpeed,
+  isConnected,
+  isSpeaking
+}: {
+  radius: number
+  tube: number
+  tilt: number
+  rotSpeed: number
+  isConnected: boolean
+  isSpeaking: boolean
+}) {
+  const ref = useRef<THREE.Mesh>(null)
+  const matRef = useRef<THREE.MeshBasicMaterial>(null)
+  const volRef = useRef(0)
+
+  useFrame((_, delta) => {
+    if (!ref.current || !matRef.current) return
+
+    ref.current.rotation.y += delta * rotSpeed
+    ref.current.rotation.z += delta * rotSpeed * 0.3
+
+    const t = performance.now() * 0.001
+    let targetVol = 0
+    if (isSpeaking) {
+      targetVol = Math.abs(Math.sin(t * 9)) * 0.6 + 0.2
+    } else if (isConnected) {
+      targetVol = Math.abs(Math.sin(t * 1.5)) * 0.12
+    }
+    volRef.current = THREE.MathUtils.lerp(volRef.current, targetVol, 0.12)
+    const vol = volRef.current
+
+    // Color lerp on ring
+    const ringColor = new THREE.Color().lerpColors(C.ring, C.ringGlow, vol)
+    matRef.current.color.copy(ringColor)
+
+    // Opacity: faint idle, bright when speaking
+    const targetOp = isConnected ? 0.15 + vol * 0.65 : 0.04
+    matRef.current.opacity = THREE.MathUtils.lerp(matRef.current.opacity, targetOp, 0.1)
+  })
+
+  return (
+    <mesh ref={ref} rotation={[tilt, 0, 0]}>
+      <torusGeometry args={[radius, tube, 3, 96]} />
+      <meshBasicMaterial
+        ref={matRef}
+        color={C.ring}
+        transparent
+        opacity={0.08}
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
+    </mesh>
+  )
+}
+
+// ─────────────────────────────────────────────────────
+// Core — assembles all layers + master scale
+// ─────────────────────────────────────────────────────
+function AIOrb({ isConnected, isSpeaking }: { isConnected: boolean; isSpeaking: boolean }) {
+  const groupRef = useRef<THREE.Group>(null)
+
+  useFrame((_, delta) => {
+    if (!groupRef.current) return
+    const targetScale = !isConnected ? 0.44 : isSpeaking ? 0.7 : 0.62
+    groupRef.current.scale.lerp(
+      new THREE.Vector3(targetScale, targetScale, targetScale),
+      delta * 3.5
+    )
+    // Subtle slow Y drift
+    groupRef.current.rotation.y += delta * 0.04
+  })
 
   return (
     <group ref={groupRef}>
-      <mesh ref={innerRef}>
-        <sphereGeometry args={[1.0, 64, 64]} />
-        <meshPhysicalMaterial
-          color={innerColor}
-          metalness={0.9}
-          roughness={0.1}
-          clearcoat={1.0}
-          clearcoatRoughness={0.1}
-          reflectivity={1.0}
-        />
-      </mesh>
+      {/* ── 3 concentric particle shells ── */}
+      {/* Inner shell — densest, largest particles, slowest spin */}
+      <ParticleShell
+        count={1800}
+        radius={1.15}
+        pointSize={0.022}
+        rotSpeedY={0.06}
+        rotSpeedZ={0.04}
+        rotSpeedX={0.02}
+        baseOpacity={0.75}
+        isConnected={isConnected}
+        isSpeaking={isSpeaking}
+        timeOffset={0}
+      />
 
-      <points ref={pointsRef}>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[positions, 3]}
-            usage={THREE.DynamicDrawUsage}
-          />
-        </bufferGeometry>
-        <pointsMaterial
-          size={0.015}
-          transparent={true}
-          opacity={0.9}
-          sizeAttenuation={true}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-        />
-      </points>
+      {/* Mid shell — medium density, medium particles */}
+      <ParticleShell
+        count={2400}
+        radius={1.55}
+        pointSize={0.013}
+        rotSpeedY={-0.09}
+        rotSpeedZ={0.06}
+        rotSpeedX={-0.03}
+        baseOpacity={0.55}
+        isConnected={isConnected}
+        isSpeaking={isSpeaking}
+        timeOffset={1.2}
+      />
+
+      {/* Outer shell — sparse, tiny particles, fastest spin */}
+      <ParticleShell
+        count={1400}
+        radius={1.95}
+        pointSize={0.008}
+        rotSpeedY={0.12}
+        rotSpeedZ={-0.08}
+        rotSpeedX={0.05}
+        baseOpacity={0.3}
+        isConnected={isConnected}
+        isSpeaking={isSpeaking}
+        timeOffset={2.7}
+      />
+
+      {/* ── Orbital rings ── */}
+      {/* Primary equatorial ring — thin, bright */}
+      <OrbitalRing
+        radius={1.42}
+        tube={0.006}
+        tilt={Math.PI * 0.08}
+        rotSpeed={0.18}
+        isConnected={isConnected}
+        isSpeaking={isSpeaking}
+      />
+
+      {/* Secondary tilted ring — slightly wider tube */}
+      <OrbitalRing
+        radius={1.68}
+        tube={0.004}
+        tilt={Math.PI * 0.38}
+        rotSpeed={-0.11}
+        isConnected={isConnected}
+        isSpeaking={isSpeaking}
+      />
+
+      {/* Tertiary polar ring — thinnest, very faint */}
+      <OrbitalRing
+        radius={1.28}
+        tube={0.003}
+        tilt={Math.PI * 0.5}
+        rotSpeed={0.22}
+        isConnected={isConnected}
+        isSpeaking={isSpeaking}
+      />
     </group>
   )
 }
 
-export default function AICore({ isConnected = false, isSpeaking = false }) {
+// ─────────────────────────────────────────────────────
+// Export
+// ─────────────────────────────────────────────────────
+export default function AICore({
+  isConnected = false,
+  isSpeaking = false
+}: {
+  isConnected?: boolean
+  isSpeaking?: boolean
+}) {
   return (
     <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none">
       <Canvas
         style={{ width: '100%', height: '100%' }}
-        camera={{ position: [0, 0, 5], fov: 45 }}
-        gl={{ antialias: true, powerPreference: 'high-performance' }}
+        camera={{ position: [0, 0, 5], fov: 42 }}
+        gl={{
+          antialias: true,
+          powerPreference: 'high-performance',
+          alpha: true
+        }}
       >
-        <ambientLight intensity={0.2} />
-        <directionalLight position={[5, 5, 5]} intensity={3.5} color="#ffffff" />
-        <directionalLight position={[-5, -5, -5]} intensity={1.5} color="#00ff41" />
-        <DualSphere isConnected={isConnected} isSpeaking={isSpeaking} />
+        {/* Minimal ambient — particles use AdditiveBlending so lights don't matter */}
+        <ambientLight intensity={0} />
+        <AIOrb isConnected={isConnected} isSpeaking={isSpeaking} />
       </Canvas>
     </div>
   )

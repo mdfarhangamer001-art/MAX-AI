@@ -21,7 +21,6 @@ export type VisionMode = 'camera' | 'screen' | 'none'
 const IndexRoot = () => {
   const [isOverlay, setIsOverlay] = useState(false)
 
-  const [isBooting, setIsBooting] = useState(true)
   const [isConnected, setIsConnected] = useState(false)
   const [systemStatus, setSystemStatus] = useState<Status>('STANDBY')
   const [isSpeaking, setIsSpeaking] = useState(false)
@@ -48,10 +47,9 @@ const IndexRoot = () => {
     } else {
       // @ts-ignore
       window.iris.startSession()
-      setTimeout(() => {
-        setIsConnected(true)
-        setSystemStatus('CONNECTING')
-      }, 1500)
+      setIsConnected(true)
+      setSystemStatus('CONNECTING')
+      setIsMuted(true)
     }
   }
 
