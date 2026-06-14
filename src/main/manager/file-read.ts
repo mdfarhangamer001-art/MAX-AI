@@ -1,6 +1,5 @@
 import fs from 'fs/promises'
 
-// Exported directly to read a file with automatic truncation for large files
 export async function readFile(filePath: string): Promise<string> {
   try {
     const content = await fs.readFile(filePath, 'utf-8')
