@@ -1,13 +1,11 @@
 import fs from 'fs/promises'
 
-// Defining the acceptable arguments for TypeScript clarity
 export interface FileOpArgs {
   operation: 'copy' | 'move' | 'delete'
   sourcePath: string
   destPath?: string
 }
 
-// Exported directly to handle native file system operations
 export async function executeFileOp({
   operation,
   sourcePath,
