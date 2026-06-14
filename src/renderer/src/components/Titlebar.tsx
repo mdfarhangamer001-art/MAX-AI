@@ -28,12 +28,12 @@ export default function TitleBar() {
   const close = () => window.electron.ipcRenderer.send('window-close')
 
   return (
-    <div className="w-full h-12 flex items-center justify-between bg-[#08080a] backdrop-blur-3xl border-b border-white/[0.06] drag-region select-none z-50 relative">
+    <div className="w-full h-12 flex items-center justify-between bg-[#08080a] backdrop-blur-3xl border-b border-white/5 drag-region select-none z-50 relative">
       {/* ── Sub-Pixel Top Edge Highlight for Glass Effect ── */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
 
       {/* ── LEFT: Brand & Platform Controls ── */}
-      <div className="flex items-center h-full min-w-[150px] pl-4 no-drag">
+      <div className="flex items-center h-full min-w-37.5 pl-4 no-drag">
         {isMac ? (
           <div className="flex items-center gap-2 group/mac">
             <button
@@ -101,7 +101,7 @@ export default function TitleBar() {
       </div>
 
       {/* ── RIGHT: Windows Controls / Mac Spacer ── */}
-      <div className="flex h-full min-w-[150px] justify-end no-drag">
+      <div className="flex h-full min-w-37.5 justify-end no-drag">
         {!isMac ? (
           <div className="flex h-full items-center">
             <button
