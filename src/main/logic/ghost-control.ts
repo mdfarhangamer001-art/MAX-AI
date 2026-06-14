@@ -59,7 +59,6 @@ const KEY_MAP: Record<string, Key> = {
   f12: Key.F12
 }
 
-// Internal helper for human-like mouse movement
 function generateHumanPath(start: Point, end: Point): Point[] {
   const steps = 25
   const pathArray: Point[] = []
