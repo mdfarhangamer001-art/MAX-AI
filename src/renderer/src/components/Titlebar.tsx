@@ -66,38 +66,31 @@ export default function TitleBar() {
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <div className="relative flex items-center justify-center w-6 h-6 rounded-md bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-              <RiCpuLine size={14} className="text-emerald-400" />
+            {/* ── CENTER: The HUD Status Pill ── */}
+            <div className="flex items-center gap-3 bg-black/60 backdrop-blur-md border border-white/10 rounded-full px-4 py-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.4)] pointer-events-none">
+              {/* Pulsing Core */}
+              <div className="relative flex items-center justify-center w-2 h-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40 animate-ping" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+              </div>
+
+              {/* Status Text */}
+              <span className="text-[9px] font-mono tracking-[0.2em] text-zinc-300 uppercase">
+                AI Assistant
+              </span>
+
+              <span className="text-[10px] text-zinc-700">|</span>
+
+              {/* Animated Waveform Icon */}
+              <div className="flex items-center gap-1.5 text-emerald-400">
+                <RiPulseLine size={12} className="animate-pulse" />
+                <span className="text-[9px] font-mono tracking-widest font-bold uppercase drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]">
+                  Active
+                </span>
+              </div>
             </div>
-            <span className="text-[11px] font-bold font-mono tracking-widest text-zinc-100 uppercase">
-              IRIS<span className="text-zinc-600">_OS</span>
-            </span>
           </div>
         )}
-      </div>
-
-      {/* ── CENTER: The HUD Status Pill ── */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3 bg-black/60 backdrop-blur-md border border-white/10 rounded-full px-4 py-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.4)] pointer-events-none">
-        {/* Pulsing Core */}
-        <div className="relative flex items-center justify-center w-2 h-2">
-          <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40 animate-ping" />
-          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400 shadow-[0_0_8px_#34d399]" />
-        </div>
-
-        {/* Status Text */}
-        <span className="text-[9px] font-mono tracking-[0.2em] text-zinc-300 uppercase">
-          AI Assistant
-        </span>
-
-        <span className="text-[10px] text-zinc-700">|</span>
-
-        {/* Animated Waveform Icon */}
-        <div className="flex items-center gap-1.5 text-emerald-400">
-          <RiPulseLine size={12} className="animate-pulse" />
-          <span className="text-[9px] font-mono tracking-widest font-bold uppercase drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]">
-            Active
-          </span>
-        </div>
       </div>
 
       {/* ── RIGHT: Windows Controls / Mac Spacer ── */}
