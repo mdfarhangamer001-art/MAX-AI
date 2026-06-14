@@ -21,7 +21,8 @@ import {
   RiTerminalWindowLine,
   RiRefreshLine,
   RiDownloadCloud2Line,
-  RiRocketLine
+  RiRocketLine,
+  RiTerminalBoxLine
 } from 'react-icons/ri'
 
 interface SettingsProps {
@@ -30,9 +31,43 @@ interface SettingsProps {
 
 type TabType = 'updates' | 'general' | 'keys' | 'security'
 
-const SettingsView = ({ isSystemActive }: SettingsProps) => {
+// --- REUSABLE UI COMPONENTS ---
+function GlassPanel({
+  children,
+  className = ''
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl bg-zinc-950/40 backdrop-blur-xl border border-white/[0.05] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)] ${className}`}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none z-0" />
+      <div className="relative z-10">{children}</div>
+    </div>
+  )
+}
+
+function NeonBar({ value, color, glow }: { value: number; color: string; glow: string }) {
+  return (
+    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden relative">
+      <div
+        className="h-full transition-all duration-300 ease-out"
+        style={{
+          width: `${Math.min(100, value)}%`,
+          background: color,
+          boxShadow: `0 0 15px ${glow}`
+        }}
+      />
+    </div>
+  )
+}
+
+export default function SettingsView({ isSystemActive }: SettingsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('updates')
 
+  // States
   const [voice, setVoice] = useState<'MALE' | 'FEMALE'>(
     (localStorage.getItem('iris_voice_profile') as 'MALE' | 'FEMALE') || 'MALE'
   )
@@ -60,7 +95,9 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
     'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'error'
   >('idle')
   const [updateVersion, setUpdateVersion] = useState('')
-  const [updateNotes, setUpdateNotes] = useState('No new updates detected.')
+  const [updateNotes, setUpdateNotes] = useState(
+    'System is fully optimized. No new firmware detected.'
+  )
   const [downloadProgress, setDownloadProgress] = useState(0)
 
   useEffect(() => {
@@ -71,7 +108,6 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
       window.electron.ipcRenderer
         .invoke('check-vault-status')
         .then((res) => setFaceCount(res?.faceCount || 0))
-
       window.electron.ipcRenderer.invoke('get-app-version').then((v) => setAppVersion(v))
 
       window.electron.ipcRenderer.on('updater-event', (_e, { status, data, error }) => {
@@ -83,7 +119,7 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
         }
         if (status === 'not-available') {
           setUpdateStatus('idle')
-          setUpdateNotes('System is up to date.')
+          setUpdateNotes('System firmware is up to date.')
         }
         if (status === 'downloading') {
           setUpdateStatus('downloading')
@@ -92,7 +128,7 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
         if (status === 'downloaded') setUpdateStatus('ready')
         if (status === 'error') {
           setUpdateStatus('error')
-          setUpdateNotes(`Error: ${error}`)
+          setUpdateNotes(`[CRITICAL ERROR]: ${error}`)
         }
       })
     }
@@ -217,66 +253,69 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
     }
   }
 
-  const cardClass =
-    'bg-[#0f0f13] border border-white/10 p-6 md:p-8 rounded-2xl flex flex-col gap-5 hover:border-white/20 transition-all shadow-lg'
+  // Common CSS classes
   const inputContainerClass =
-    'flex items-center bg-[#050505] border border-white/10 rounded-lg px-4 py-3 focus-within:border-white/30 focus-within:bg-black transition-all duration-300 w-full'
-  const titleClass = 'text-sm font-semibold text-white flex items-center gap-2'
+    'flex items-center bg-black/50 border border-white/10 rounded-lg px-4 py-3 focus-within:border-emerald-500/50 focus-within:shadow-[0_0_15px_rgba(16,185,129,0.1)] transition-all duration-300 w-full'
+  const labelClass =
+    'text-[10px] text-zinc-400 font-mono tracking-widest uppercase flex items-center gap-2 mb-2'
+  const titleClass =
+    'text-xs font-mono tracking-widest uppercase text-white flex items-center gap-3'
+
+  const tabConfigs = [
+    { id: 'updates', label: 'SYSTEM', icon: <RiTerminalWindowLine size={14} /> },
+    { id: 'general', label: 'GENERAL', icon: <RiSettings4Line size={14} /> },
+    { id: 'keys', label: 'API KEYS', icon: <RiPlugLine size={14} /> },
+    { id: 'security', label: 'SECURITY', icon: <RiShieldKeyholeLine size={14} /> }
+  ]
 
   return (
-    <div className="flex-1 p-6 md:p-10 lg:p-16 flex flex-col items-center bg-black min-h-screen text-zinc-100 overflow-y-auto scrollbar-small">
+    <div className="flex-1 p-6 md:p-10 flex flex-col items-center bg-transparent min-h-screen text-zinc-100 overflow-y-auto scrollbar-small">
       <motion.div
-        className="w-full max-w-4xl flex flex-col gap-8"
+        className="w-full max-w-4xl flex flex-col gap-6"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/10 pb-6">
-          <div className="flex items-center gap-5">
-            <div className="p-4 bg-[#111] rounded-2xl border border-white/10 flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.03)]">
-              <GiArtificialIntelligence size={36} className="text-white" />
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="relative flex items-center justify-center h-12 w-12 rounded-xl bg-zinc-900 border border-white/10 shadow-lg">
+              <GiArtificialIntelligence size={24} className="text-zinc-100" />
+              {isSystemActive && (
+                <div className="absolute top-0 right-0 h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse -translate-y-1/2 translate-x-1/2" />
+              )}
             </div>
             <div>
-              <h2 className="text-3xl font-bold tracking-tight text-white">Command Center</h2>
-              <p className="text-xs text-zinc-400 font-mono mt-1 tracking-widest flex items-center gap-2 uppercase">
-                <RiRecordCircleLine
-                  className={`${isSystemActive ? 'text-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]' : 'text-zinc-600'}`}
-                  size={14}
-                />
-                {isSystemActive ? 'System Online' : 'System Offline'}
+              <h2 className="text-2xl font-bold tracking-tight text-white">System Configuration</h2>
+              <p className="text-[10px] text-zinc-500 font-mono mt-1 tracking-[0.2em] uppercase">
+                Kernel: OS_CORE_V2.0
               </p>
             </div>
           </div>
 
-          <div className="flex bg-[#0a0a0c] p-1 rounded-xl border border-white/10 w-full md:w-fit shadow-lg overflow-x-auto scrollbar-none">
-            <button
-              onClick={() => setActiveTab('updates')}
-              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'updates' ? 'bg-white text-black shadow-md' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
-            >
-              <RiTerminalWindowLine size={16} /> SYSTEM
-            </button>
-            <button
-              onClick={() => setActiveTab('general')}
-              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'general' ? 'bg-white text-black shadow-md' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
-            >
-              <RiSettings4Line size={16} /> GENERAL
-            </button>
-            <button
-              onClick={() => setActiveTab('keys')}
-              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'keys' ? 'bg-white text-black shadow-md' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
-            >
-              <RiPlugLine size={16} /> API KEYS
-            </button>
-            <button
-              onClick={() => setActiveTab('security')}
-              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'security' ? 'bg-white text-black shadow-md' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
-            >
-              <RiShieldKeyholeLine size={16} /> SECURITY
-            </button>
+          {/* TAB DOCK */}
+          <div className="flex bg-zinc-950/80 p-1.5 rounded-xl border border-white/5 backdrop-blur-md shadow-2xl w-full md:w-fit overflow-x-auto scrollbar-none">
+            {tabConfigs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as TabType)}
+                className={`flex items-center justify-center gap-2 px-5 py-2 text-[10px] font-bold tracking-widest uppercase rounded-lg transition-all duration-300 whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                    : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5 border border-transparent'
+                }`}
+              >
+                {tab.icon} {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="relative min-h-125 pb-12 mt-2">
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+        {/* CONTENT AREA */}
+        <div className="relative min-h-[500px]">
           <AnimatePresence mode="wait">
+            {/* --- TAB 1: UPDATES --- */}
             {activeTab === 'updates' && (
               <motion.div
                 key="updates"
@@ -284,90 +323,115 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-6 absolute w-full"
+                className="grid grid-cols-1 md:grid-cols-12 gap-6 absolute w-full"
               >
-                <div className={`${cardClass} md:col-span-1 border-emerald-500/20`}>
-                  <div className="flex justify-between items-center border-b border-white/10 pb-4">
+                {/* Firmware Card */}
+                <GlassPanel className="md:col-span-5 p-6 flex flex-col items-center text-center">
+                  <div className="w-full flex justify-between items-center border-b border-white/10 pb-4 mb-6">
                     <span className={titleClass}>
-                      <RiRocketLine className="text-emerald-400" size={18} /> OS Firmware
+                      <RiRocketLine className="text-zinc-400" size={16} /> Firmware
                     </span>
-                    <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded font-mono font-bold tracking-widest">
-                      v{appVersion}
+                    <span className="text-[9px] bg-white/5 text-zinc-300 border border-white/10 px-2 py-1 rounded font-mono tracking-[0.2em] uppercase">
+                      BUILD v{appVersion}
                     </span>
                   </div>
 
-                  <div className="flex flex-col gap-4 items-center justify-center flex-1 py-4 text-center">
+                  <div className="flex-1 flex flex-col items-center justify-center w-full min-h-[200px]">
                     {updateStatus === 'idle' || updateStatus === 'error' ? (
-                      <>
-                        <RiTerminalWindowLine size={48} className="text-zinc-700" />
-                        <p className="text-xs text-zinc-400 font-mono">Current build is stable.</p>
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="h-20 w-20 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center relative">
+                          <RiRecordCircleLine size={30} className="text-zinc-600" />
+                        </div>
+                        <p className="text-[10px] text-zinc-500 font-mono tracking-widest uppercase">
+                          System is Nominal
+                        </p>
                         <button
                           onClick={checkForUpdates}
-                          className="mt-2 w-full py-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold tracking-widest text-[11px] flex items-center justify-center gap-2 transition-all cursor-pointer"
+                          className="mt-4 px-6 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white font-mono text-[10px] tracking-widest uppercase flex items-center gap-2 transition-all"
                         >
-                          <RiRefreshLine size={16} /> CHECK FOR UPDATES
+                          <RiRefreshLine size={14} /> Scan for Updates
                         </button>
-                      </>
+                      </div>
                     ) : updateStatus === 'checking' ? (
-                      <>
-                        <RiRefreshLine size={48} className="text-emerald-500 animate-spin" />
-                        <p className="text-xs text-emerald-400 font-mono animate-pulse">
-                          PINGING NEURAL NETWORK...
+                      <div className="flex flex-col items-center gap-6">
+                        <div className="relative h-24 w-24">
+                          <div className="absolute inset-0 rounded-full border border-emerald-500/30" />
+                          <div
+                            className="absolute inset-0 rounded-full border-t border-emerald-400 animate-spin shadow-[0_0_15px_rgba(16,185,129,0.5)]"
+                            style={{ animationDuration: '1s' }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <RiRocketLine className="text-emerald-400" size={24} />
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-emerald-400 font-mono tracking-widest uppercase animate-pulse">
+                          Querying Mainframe...
                         </p>
-                      </>
+                      </div>
                     ) : updateStatus === 'available' ? (
-                      <>
-                        <RiDownloadCloud2Line size={48} className="text-cyan-400" />
-                        <p className="text-xs text-cyan-400 font-mono">
-                          NEW BUILD FOUND: v{updateVersion}
+                      <div className="flex flex-col items-center gap-4 w-full">
+                        <div className="h-20 w-20 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center relative shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+                          <RiDownloadCloud2Line size={30} className="text-cyan-400" />
+                        </div>
+                        <p className="text-[10px] text-cyan-400 font-mono tracking-[0.2em] uppercase mt-2">
+                          New Patch Found: v{updateVersion}
                         </p>
                         <button
                           onClick={downloadUpdate}
-                          className="mt-2 w-full py-3 rounded-lg bg-cyan-500/20 hover:bg-cyan-500 text-cyan-400 hover:text-black font-bold tracking-widest text-[11px] flex items-center justify-center gap-2 transition-all border border-cyan-500/50 cursor-pointer"
+                          className="mt-2 w-full py-2.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 font-mono tracking-widest text-[10px] border border-cyan-500/50 uppercase transition-all"
                         >
-                          <RiDownloadCloud2Line size={16} /> INITIALIZE DOWNLOAD
+                          Initialize Download
                         </button>
-                      </>
+                      </div>
                     ) : updateStatus === 'downloading' ? (
-                      <div className="w-full flex flex-col gap-3">
-                        <div className="flex justify-between text-[10px] font-mono text-zinc-400">
-                          <span>DOWNLOADING PATCH...</span>
+                      <div className="flex flex-col w-full gap-4 justify-center h-full px-4">
+                        <div className="flex justify-between text-[10px] font-mono tracking-widest text-cyan-400 uppercase">
+                          <span>Downloading</span>
                           <span>{downloadProgress}%</span>
                         </div>
-                        <div className="w-full h-2 bg-black rounded-full overflow-hidden border border-white/10">
-                          <div
-                            className="h-full bg-cyan-500 shadow-[0_0_10px_#06b6d4] transition-all duration-300"
-                            style={{ width: `${downloadProgress}%` }}
-                          />
-                        </div>
+                        <NeonBar
+                          value={downloadProgress}
+                          color="#06b6d4"
+                          glow="rgba(6,182,212,0.5)"
+                        />
                       </div>
                     ) : (
-                      <>
-                        <RiRecordCircleLine size={48} className="text-emerald-400 animate-pulse" />
-                        <p className="text-xs text-emerald-400 font-mono">PATCH DOWNLOADED</p>
+                      <div className="flex flex-col items-center gap-4 w-full">
+                        <div className="h-20 w-20 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+                          <RiRecordCircleLine size={30} className="text-emerald-400" />
+                        </div>
+                        <p className="text-[10px] text-emerald-400 font-mono tracking-[0.2em] uppercase">
+                          Ready for Execution
+                        </p>
                         <button
                           onClick={installUpdate}
-                          className="mt-2 w-full py-3 rounded-lg bg-emerald-500 text-black font-bold tracking-widest text-[11px] flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)] cursor-pointer"
+                          className="mt-2 w-full py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-bold font-mono tracking-widest text-[10px] uppercase shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all"
                         >
-                          <RiRocketLine size={16} /> EXECUTE RESTART
+                          Reboot System
                         </button>
-                      </>
+                      </div>
                     )}
                   </div>
-                </div>
+                </GlassPanel>
 
-                <div className={`${cardClass} md:col-span-1`}>
-                  <div className="flex justify-between items-center border-b border-white/10 pb-4">
-                    <span className={titleClass}>
-                      <RiTerminalWindowLine className="text-zinc-400" size={18} /> Patch Notes
+                {/* Patch Notes Card */}
+                <GlassPanel className="md:col-span-7 p-0 flex flex-col h-full">
+                  <div className="bg-black/40 border-b border-white/5 px-6 py-4 flex items-center gap-3">
+                    <RiTerminalBoxLine className="text-zinc-500" size={16} />
+                    <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-400 uppercase">
+                      System_Logs.txt
                     </span>
                   </div>
-                  <div className="flex-1 bg-[#050505] border border-white/5 rounded-xl p-4 overflow-y-auto max-h-60 scrollbar-small">
-                    <pre className="text-[11px] font-mono text-zinc-400 whitespace-pre-wrap leading-relaxed">
-                      {updateNotes}
-                    </pre>
+                  <div className="flex-1 p-6 overflow-y-auto scrollbar-small font-mono text-[11px] text-zinc-300 leading-relaxed">
+                    {updateStatus === 'checking' ? (
+                      <span className="text-emerald-400 animate-pulse">
+                        Establishing secure connection...
+                      </span>
+                    ) : (
+                      <pre className="whitespace-pre-wrap">{updateNotes}</pre>
+                    )}
                   </div>
-                </div>
+                </GlassPanel>
               </motion.div>
             )}
 
@@ -381,92 +445,87 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
                 transition={{ duration: 0.2 }}
                 className="grid grid-cols-1 md:grid-cols-2 gap-6 absolute w-full"
               >
-                <div className={`${cardClass} md:col-span-2`}>
-                  <div className="flex justify-between items-center">
+                {/* Personality Matrix */}
+                <GlassPanel className="md:col-span-2 p-6">
+                  <div className="flex justify-between items-center mb-6">
                     <span className={titleClass}>
-                      <RiUserLine className="text-zinc-400" size={18} /> AI Personality Matrix
+                      <RiBrainLine size={16} className="text-emerald-400" /> Core Personality Matrix
                     </span>
                     <div className="flex items-center gap-4">
                       <span
-                        className={`text-[10px] font-mono tracking-widest ${currentWordCount >= 150 ? 'text-red-400' : 'text-zinc-400'}`}
+                        className={`text-[9px] font-mono tracking-[0.2em] uppercase ${currentWordCount >= 150 ? 'text-red-400' : 'text-zinc-500'}`}
                       >
                         {currentWordCount} / 150 WORDS
                       </span>
                       <button
                         onClick={savePersonality}
-                        className="text-zinc-400 hover:text-white transition-colors bg-white/5 p-2 rounded-md hover:bg-white/10 border border-white/5"
+                        className="text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20 transition-all"
                       >
-                        <RiSave3Line size={18} />
+                        <RiSave3Line size={16} />
                       </button>
                     </div>
                   </div>
                   <textarea
                     value={personality}
                     onChange={handlePersonalityChange}
-                    placeholder="Define who IRIS is. Example: 'You are a sassy, highly technical assistant...'"
-                    className="bg-[#050505] border border-white/10 rounded-lg p-4 text-sm text-zinc-200 h-32 resize-none focus:border-white/30 outline-none transition-all scrollbar-small"
+                    placeholder="Define the structural behavior of IRIS..."
+                    className="w-full bg-black/50 border border-white/5 rounded-xl p-4 text-[12px] text-zinc-300 font-mono h-32 resize-none focus:border-emerald-500/30 outline-none transition-all scrollbar-small leading-relaxed"
                   />
-                </div>
+                </GlassPanel>
 
-                <div className={cardClass}>
-                  <div className="flex justify-between items-end">
-                    <span className={titleClass}>
-                      <RiUserLine className="text-zinc-400" size={18} /> User Designation
-                    </span>
-                  </div>
+                {/* User Designation */}
+                <GlassPanel className="p-6">
+                  <span className={`${titleClass} mb-4`}>
+                    <RiUserLine size={16} className="text-zinc-400" /> User Designation
+                  </span>
                   <div className={inputContainerClass}>
                     <input
                       type="text"
                       value={userName}
                       onChange={(e) => setUserName(e.target.value)}
-                      placeholder="Enter operator name..."
-                      className="bg-transparent border-none outline-none text-sm text-zinc-100 w-full placeholder:text-zinc-600 font-medium"
+                      placeholder="Operator Name"
+                      className="bg-transparent border-none outline-none text-[12px] font-mono tracking-widest uppercase text-zinc-100 w-full placeholder:text-zinc-600"
                     />
                     <button
                       onClick={saveUserName}
-                      className="text-zinc-500 hover:text-white transition-colors ml-2"
+                      className="text-zinc-400 hover:text-emerald-400 transition-colors ml-2"
                     >
-                      <RiSave3Line size={20} />
+                      <RiSave3Line size={18} />
                     </button>
                   </div>
-                </div>
+                </GlassPanel>
 
-                <div className={`${cardClass} relative`}>
-                  <div className="flex justify-between items-center">
+                {/* Voice Profile */}
+                <GlassPanel className="p-6">
+                  <div className="flex justify-between items-center mb-4">
                     <span className={titleClass}>
-                      <RiUserVoiceLine className="text-zinc-400" size={18} /> OS Voice Profile
+                      <RiUserVoiceLine size={16} className="text-zinc-400" /> Voice Synthesis
                     </span>
                     {isSystemActive && (
-                      <span className="text-[10px] text-red-400 font-mono tracking-widest flex items-center gap-1 bg-red-500/10 px-2 py-1 rounded border border-red-500/20">
-                        <RiLock2Line /> LOCKED AS IRIS IS CONNECTED
+                      <span className="text-[8px] text-red-400 font-mono tracking-widest uppercase border border-red-500/20 bg-red-500/10 px-2 py-0.5 rounded">
+                        Locked (Active)
                       </span>
                     )}
                   </div>
                   <div
-                    className={`flex gap-3 h-12 mt-1 ${isSystemActive ? 'opacity-40 cursor-not-allowed' : ''}`}
+                    className={`flex gap-3 h-[42px] ${isSystemActive ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     {(['FEMALE', 'MALE'] as const).map((s) => (
                       <button
                         key={s}
                         onClick={() => handleVoiceChange(s)}
                         disabled={isSystemActive}
-                        className={`cursor-pointer flex-1 flex items-center justify-center text-[12px] font-bold rounded-lg transition-all tracking-widest border ${
+                        className={`flex-1 rounded-lg font-mono text-[10px] tracking-[0.2em] uppercase transition-all border ${
                           voice === s
-                            ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-                            : 'bg-[#050505] border-white/10 text-zinc-400 hover:text-white hover:border-white/30'
+                            ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.1)]'
+                            : 'bg-black/50 border-white/10 text-zinc-500 hover:border-white/30'
                         }`}
                       >
                         {s}
                       </button>
                     ))}
                   </div>
-                  {isSystemActive && (
-                    <div
-                      className="absolute inset-0 z-10"
-                      title="Disconnect AI to change voice"
-                    ></div>
-                  )}
-                </div>
+                </GlassPanel>
               </motion.div>
             )}
 
@@ -478,40 +537,39 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="grid grid-cols-1 gap-6 absolute w-full"
+                className="grid grid-cols-1 md:grid-cols-2 gap-6 absolute w-full"
               >
-                <div className={`${cardClass} gap-6`}>
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                <GlassPanel className="md:col-span-2 p-6 flex flex-col gap-6">
+                  <div className="flex justify-between items-center border-b border-white/5 pb-4">
                     <span className={titleClass}>
-                      <RiKey2Line className="text-zinc-400" size={18} /> External API Endpoints
+                      <RiKey2Line size={16} className="text-emerald-400" /> Neural Endpoints
                     </span>
                     <button
                       onClick={saveApiKeys}
-                      className="bg-white text-black px-6 py-2.5 rounded-lg text-xs font-bold tracking-widest hover:bg-zinc-200 transition-colors shadow-[0_0_15px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 cursor-pointer"
+                      className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-4 py-2 rounded-lg text-[10px] font-mono font-bold tracking-[0.2em] uppercase hover:bg-emerald-500/20 transition-all flex items-center gap-2"
                     >
-                      <RiSave3Line size={16} /> SAVE ALL KEYS
+                      <RiSave3Line size={14} /> Commit Keys
                     </button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="flex flex-col gap-2">
-                      <label className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase flex items-center gap-2">
-                        <RiBrainLine size={14} /> Gemini Pro Core
+                    <div>
+                      <label className={labelClass}>
+                        <RiBrainLine /> Gemini Core
                       </label>
                       <div className={inputContainerClass}>
                         <input
                           type="password"
                           value={geminiKey}
                           onChange={(e) => setGeminiKey(e.target.value)}
-                          placeholder="AIzaSy_..."
-                          className="bg-transparent border-none outline-none text-sm font-mono text-zinc-100 w-full placeholder:text-zinc-700"
+                          placeholder="AIzaSy..."
+                          className="bg-transparent border-none outline-none text-[12px] font-mono text-zinc-300 w-full placeholder:text-zinc-700"
                         />
                       </div>
                     </div>
-
-                    <div className="flex flex-col gap-2">
-                      <label className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase flex items-center gap-2">
-                        <RiCpuLine size={14} /> Groq Fast Inferencing
+                    <div>
+                      <label className={labelClass}>
+                        <RiCpuLine /> Groq Inference
                       </label>
                       <div className={inputContainerClass}>
                         <input
@@ -519,14 +577,13 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
                           value={groqKey}
                           onChange={(e) => setGroqKey(e.target.value)}
                           placeholder="gsk_..."
-                          className="bg-transparent border-none outline-none text-sm font-mono text-zinc-100 w-full placeholder:text-zinc-700"
+                          className="bg-transparent border-none outline-none text-[12px] font-mono text-zinc-300 w-full placeholder:text-zinc-700"
                         />
                       </div>
                     </div>
-
-                    <div className="flex flex-col gap-2 md:col-span-2">
-                      <label className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase flex items-center gap-2">
-                        <RiCloudLine size={14} /> Hugging Face Vision
+                    <div>
+                      <label className={labelClass}>
+                        <RiCloudLine /> Hugging Face
                       </label>
                       <div className={inputContainerClass}>
                         <input
@@ -534,36 +591,34 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
                           value={hfKey}
                           onChange={(e) => setHfKey(e.target.value)}
                           placeholder="hf_..."
-                          className="bg-transparent border-none outline-none text-sm font-mono text-zinc-100 w-full placeholder:text-zinc-700"
+                          className="bg-transparent border-none outline-none text-[12px] font-mono text-zinc-300 w-full placeholder:text-zinc-700"
                         />
                       </div>
                     </div>
-
-                    <div className="flex flex-col gap-2 md:col-span-2">
-                      <label className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase flex items-center gap-2">
-                        <RiPlugLine size={14} /> Tailvy Builder Agent
+                    <div>
+                      <label className={labelClass}>
+                        <RiPlugLine /> Tavily Search
                       </label>
                       <div className={inputContainerClass}>
                         <input
                           type="password"
                           value={tailvyKey}
                           onChange={(e) => setTailvyKey(e.target.value)}
-                          placeholder="tlv_..."
-                          className="bg-transparent border-none outline-none text-sm font-mono text-zinc-100 w-full placeholder:text-zinc-700"
+                          placeholder="tvly-..."
+                          className="bg-transparent border-none outline-none text-[12px] font-mono text-zinc-300 w-full placeholder:text-zinc-700"
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-[#050505] border border-white/5 p-4 rounded-xl mt-2 flex items-start gap-3">
-                    <RiShieldKeyholeLine className="text-zinc-500 shrink-0 mt-0.5" size={16} />
-                    <p className="text-[10px] text-zinc-400 font-mono leading-relaxed">
-                      [SECURITY NOTICE]: All API keys are encrypted and stored strictly in your
-                      local OS. IRIS does not transmit these keys to any centralized server. You
-                      maintain full ownership and billing control over your provider endpoints.
+                  <div className="bg-emerald-500/5 border border-emerald-500/10 p-4 rounded-xl flex gap-3 items-start mt-2">
+                    <RiShieldKeyholeLine className="text-emerald-500 shrink-0 mt-0.5" size={14} />
+                    <p className="text-[9px] text-emerald-500/70 font-mono uppercase tracking-widest leading-relaxed">
+                      All endpoints are encrypted and stored in local memory. IRIS does not transmit
+                      keys externally.
                     </p>
                   </div>
-                </div>
+                </GlassPanel>
               </motion.div>
             )}
 
@@ -575,109 +630,117 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="w-full rounded-3xl overflow-hidden shadow-2xl border border-white/5 absolute"
+                className="w-full absolute"
               >
-                <AnimatePresence>
-                  {!isSecurityUnlocked && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-                      className="absolute inset-0 z-20 backdrop-blur-2xl bg-black/70 border border-white/10 rounded-3xl flex flex-col items-center justify-center"
-                    >
-                      <div className="bg-[#111] p-5 rounded-full mb-6 border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.05)]">
-                        <RiLockPasswordLine size={40} className="text-white" />
-                      </div>
-                      <p className="text-xs text-zinc-300 font-mono tracking-widest uppercase mb-6 font-semibold">
-                        Authenticate to access Vault Settings
-                      </p>
-                      <div className="flex gap-3 items-center h-12">
+                <GlassPanel className="p-0 overflow-hidden min-h-[400px]">
+                  <AnimatePresence>
+                    {!isSecurityUnlocked && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+                        className="absolute inset-0 z-20 backdrop-blur-3xl bg-black/80 flex flex-col items-center justify-center border border-white/5"
+                      >
+                        <div
+                          className={`p-5 rounded-full mb-6 border transition-all duration-300 ${authError ? 'border-red-500 bg-red-500/10 shadow-[0_0_30px_rgba(239,68,68,0.2)]' : 'border-emerald-500/30 bg-emerald-500/10 shadow-[0_0_30px_rgba(16,185,129,0.1)]'}`}
+                        >
+                          <RiLockPasswordLine
+                            size={32}
+                            className={authError ? 'text-red-500' : 'text-emerald-400'}
+                          />
+                        </div>
+                        <p className="text-[10px] text-zinc-400 font-mono tracking-[0.2em] uppercase mb-6">
+                          Vault Authentication Required
+                        </p>
+                        <div className="flex gap-3 h-12">
+                          <input
+                            type="password"
+                            maxLength={4}
+                            pattern="\d*"
+                            value={authPin}
+                            onChange={(e) => setAuthPin(e.target.value.replace(/\D/g, ''))}
+                            placeholder="PIN"
+                            className={`h-full bg-black/50 border w-32 rounded-lg text-center text-xl tracking-[0.5em] text-white outline-none transition-colors ${authError ? 'border-red-500' : 'border-white/10 focus:border-emerald-500/50'}`}
+                          />
+                          <button
+                            onClick={unlockSecurityModule}
+                            className="h-full px-6 bg-white/10 hover:bg-white/20 border border-white/10 text-white text-[10px] font-mono tracking-widest uppercase rounded-lg transition-all"
+                          >
+                            Unlock
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+                    {/* Master PIN */}
+                    <div className="bg-black/50 border border-white/5 p-6 rounded-2xl flex flex-col h-fit">
+                      <span className={`${titleClass} mb-6`}>
+                        <RiLock2Line className="text-zinc-500" /> Master PIN
+                      </span>
+                      <div className={inputContainerClass}>
                         <input
                           type="password"
                           maxLength={4}
                           pattern="\d*"
-                          value={authPin}
-                          onChange={(e) => setAuthPin(e.target.value.replace(/\D/g, ''))}
-                          placeholder="PIN"
-                          className={`h-full bg-[#050505] border w-32 rounded-lg text-center text-xl tracking-[0.5em] text-white outline-none transition-colors ${authError ? 'border-red-500 text-red-500 bg-red-500/10' : 'border-white/20 focus:border-white focus:bg-[#111]'}`}
+                          value={newPin}
+                          onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
+                          placeholder="New 4-Digit PIN"
+                          className="bg-transparent border-none outline-none text-[14px] font-mono tracking-[0.3em] text-zinc-100 w-full"
                         />
                         <button
-                          onClick={unlockSecurityModule}
-                          className="h-full px-8 bg-white text-black text-xs font-bold tracking-widest rounded-lg hover:bg-zinc-200 transition-colors shadow-[0_0_15px_rgba(255,255,255,0.2)] cursor-pointer"
+                          onClick={updateMasterPin}
+                          className="text-zinc-500 hover:text-emerald-400 transition-colors ml-2"
                         >
-                          UNLOCK
+                          <RiSave3Line size={18} />
                         </button>
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#0a0a0c] p-6 rounded-3xl border border-white/5">
-                  <div className="bg-[#111113] border border-white/10 p-7 rounded-2xl flex flex-col gap-5">
-                    <span className={titleClass}>
-                      <RiLockPasswordLine className="text-zinc-400" size={18} /> Update Master PIN
-                    </span>
-                    <div className={inputContainerClass}>
-                      <input
-                        type="password"
-                        maxLength={4}
-                        pattern="\d*"
-                        value={newPin}
-                        onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
-                        placeholder="Enter new 4-digit PIN..."
-                        className="bg-transparent border-none outline-none text-sm font-mono text-zinc-100 w-full tracking-[0.3em]"
-                      />
-                      <button
-                        onClick={updateMasterPin}
-                        className="text-zinc-500 hover:text-white transition-colors ml-2 cursor-pointer"
-                      >
-                        <RiSave3Line size={20} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#111113] border border-white/10 p-7 rounded-2xl flex flex-col gap-6">
-                    <div className="flex justify-between items-center border-b border-white/10 pb-4">
-                      <span className={titleClass}>
-                        <RiScan2Line className="text-zinc-400" size={18} /> Biometric Registry
-                      </span>
-                      <span className="text-[10px] text-white font-mono tracking-widest bg-white/10 px-3 py-1.5 rounded-md font-semibold border border-white/5">
-                        {faceCount} ENROLLED
-                      </span>
                     </div>
 
-                    {isScanningFace ? (
-                      <div className="flex items-center gap-4 bg-[#050505] p-3 rounded-xl border border-white/20">
-                        <video
-                          ref={videoRef}
-                          autoPlay
-                          muted
-                          playsInline
-                          className="w-16 h-16 rounded-lg object-cover -scale-x-100 border border-white/10"
-                        />
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[11px] text-white font-mono tracking-widest animate-pulse font-bold">
+                    {/* Biometrics */}
+                    <div className="bg-black/50 border border-white/5 p-6 rounded-2xl flex flex-col h-full min-h-[250px]">
+                      <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+                        <span className={titleClass}>
+                          <RiScan2Line className="text-zinc-500" /> Biometrics
+                        </span>
+                        <span className="text-[9px] text-zinc-400 font-mono tracking-widest bg-white/5 px-2 py-1 rounded-md border border-white/10">
+                          {faceCount} Enrolled
+                        </span>
+                      </div>
+
+                      {isScanningFace ? (
+                        <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                          <div className="relative p-1 rounded-xl border border-emerald-500/50 bg-emerald-500/10">
+                            <video
+                              ref={videoRef}
+                              autoPlay
+                              muted
+                              playsInline
+                              className="w-24 h-24 rounded-lg object-cover -scale-x-100"
+                            />
+                            <div className="absolute inset-0 border border-emerald-400 animate-pulse pointer-events-none rounded-xl" />
+                          </div>
+                          <span className="text-[9px] text-emerald-400 font-mono tracking-[0.2em] uppercase animate-pulse">
                             {enrollStatus}
                           </span>
-                          <span className="text-xs text-zinc-400">Keep head steady...</span>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-4 h-full justify-between">
-                        <p className="text-xs text-zinc-400 leading-relaxed">
-                          Enroll additional structural face descriptors. Data is mathematically
-                          encrypted and stored locally.
-                        </p>
-                        <button
-                          onClick={startFaceEnrollment}
-                          className="w-full py-3 rounded-lg bg-white text-black font-bold tracking-widest text-[12px] flex items-center justify-center gap-2 hover:bg-zinc-200 transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] mt-auto cursor-pointer"
-                        >
-                          <RiAddLine size={18} /> ENROLL NEW IDENTITY
-                        </button>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="flex-1 flex flex-col justify-between">
+                          <p className="text-[10px] font-mono text-zinc-500 leading-relaxed uppercase tracking-widest">
+                            Add structural face descriptors for passwordless authentication.
+                          </p>
+                          <button
+                            onClick={startFaceEnrollment}
+                            className="w-full py-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white font-mono tracking-widest text-[10px] uppercase flex items-center justify-center gap-2 transition-all mt-4"
+                          >
+                            <RiAddLine size={14} /> Scan Face
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                </GlassPanel>
               </motion.div>
             )}
           </AnimatePresence>
@@ -686,5 +749,3 @@ const SettingsView = ({ isSystemActive }: SettingsProps) => {
     </div>
   )
 }
-
-export default SettingsView
