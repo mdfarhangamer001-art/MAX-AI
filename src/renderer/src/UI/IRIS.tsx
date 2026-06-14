@@ -111,9 +111,6 @@ const IRIS = ({
       {/* MAIN CONTENT AREA                           */}
       {/* ------------------------------------------- */}
       <div className="flex-1 overflow-hidden relative bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-zinc-950 via-black to-black">
-        {/* Subtle Engineering Grid Overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-size-[48px_48px] pointer-events-none" />
-
         {/* Content Wrapper */}
         <div className="relative h-full w-full p-4 overflow-y-auto">
           <div className={`h-full w-full ${activeTab === 'DASHBOARD' ? 'block' : 'hidden'}`}>
