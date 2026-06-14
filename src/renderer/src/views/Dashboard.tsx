@@ -45,12 +45,12 @@ export default function Dashboard({
           <AICore isConnected={isConnected} isSpeaking={isSpeaking} />
 
           {/* ─── HUD CONTROL DOCK ─── */}
-          <div className="flex items-center gap-2 bg-black/60 backdrop-blur-2xl border border-white/10 p-1.5 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.05)] z-20">
+          <div className="flex items-center gap-2 bg-black/60 backdrop-blur-2xl border border-white/10 p-1.5 rounded-4xl shadow-[0_20px_50px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.05)] z-20">
             {/* ── OPTICS MENU TOGGLE ── */}
             <div className="relative flex items-center justify-center">
               {/* Floating Context Menu */}
               {showVisionMenu && isConnected && (
-                <div className="absolute bottom-[calc(100%+12px)] flex flex-col gap-1 p-1.5 bg-zinc-950/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,255,65,0.15)] z-50 origin-bottom animate-in fade-in zoom-in-95 duration-200 min-w-[140px]">
+                <div className="absolute bottom-[calc(100%+12px)] flex flex-col gap-1 p-1.5 bg-zinc-950/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,255,65,0.15)] z-50 origin-bottom animate-in fade-in zoom-in-95 duration-200 min-w-35">
                   <div className="px-3 py-1.5 border-b border-white/5 mb-1">
                     <span className="text-[9px] font-mono tracking-widest text-zinc-500 uppercase">
                       Optics Feed
@@ -132,7 +132,7 @@ export default function Dashboard({
               </div>
 
               {/* Status Text */}
-              <div className="flex flex-col justify-center min-w-[90px]">
+              <div className="flex flex-col justify-center min-w-22.5">
                 <span
                   className={`text-[11px] tracking-widest font-mono font-bold uppercase transition-colors leading-tight ${
                     systemStatus === 'CONNECTING'
