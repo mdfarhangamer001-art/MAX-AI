@@ -297,7 +297,7 @@ export default function SettingsView({ isSystemActive }: SettingsProps) {
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={checkForUpdates}
-                          className="mt-6 px-6 py-3 rounded-xl bg-white text-black font-semibold text-sm flex items-center gap-2"
+                          className="mt-6 px-6 py-3 cursor-pointer rounded-xl bg-white text-black font-semibold text-sm flex items-center gap-2"
                         >
                           <RiRefreshLine size={18} /> Check for Updates
                         </motion.button>
