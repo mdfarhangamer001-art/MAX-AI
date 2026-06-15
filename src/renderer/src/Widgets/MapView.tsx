@@ -69,9 +69,7 @@ export default function LeafletMapWidget() {
         .addTo(map)
 
       layersRef.current.push(marker)
-    }
-
-    else if (mapData.mode === 'route') {
+    } else if (mapData.mode === 'route') {
       const startMarker = L.marker(mapData.start)
         .bindPopup(`Origin: ${mapData.info.origin}`)
         .addTo(map)
