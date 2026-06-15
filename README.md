@@ -2,7 +2,9 @@
 
 ![IRIS Neural OS Documentation Banner](./assets/banner.png)
 
-## The Autonomous Voice-First Neural OS Agent
+### Voice-First Desktop AI Assistant
+
+Build faster. Automate workflows. Control your desktop with Voice Commands.
 
 <div style="display: flex; justify-center; gap: 10px; margin-bottom: 20px;">
 
