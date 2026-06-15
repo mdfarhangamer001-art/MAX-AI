@@ -1,51 +1,49 @@
-import fs from 'fs'
-import path from 'path'
 import { app, BrowserWindow, safeStorage } from 'electron'
+import path from 'path'
+import fs from 'fs/promises'
+import fsSync from 'fs'
 import { exec } from 'child_process'
 import { GoogleGenAI } from '@google/genai'
-import fsSync from 'fs'
 
 function getProjectsDir(): string {
   const projectsDir = path.resolve(app.getPath('userData'), 'Projects')
-  if (!fs.existsSync(projectsDir)) {
-    fs.mkdirSync(projectsDir, { recursive: true })
+  if (!fsSync.existsSync(projectsDir)) {
+    fsSync.mkdirSync(projectsDir, { recursive: true })
   }
   return projectsDir
 }
 
-function emitCodeChunk(chunk: string) {
-  const win = BrowserWindow.getAllWindows()[0]
-  if (win && !win.isDestroyed()) {
-    win.webContents.send('live-code-chunk', chunk)
-  }
-}
+export async function startLiveCoding({ prompt, filename }: { prompt: string; filename: string }) {
+  const mainWindow = BrowserWindow.getAllWindows()[0]
 
-export async function startLiveCoding({
-  prompt,
-  filename
-}: {
-  prompt: string
-  filename: string
-  geminiKey: string
-}) {
+  // 1. Tell frontend to open the widget and show the initializing state
+  if (mainWindow) {
+    mainWindow.webContents.send('open-coding-widget', { filename })
+  }
+
   try {
     const projectsDir = getProjectsDir()
     const filePath = path.join(projectsDir, filename)
 
-    fs.writeFileSync(filePath, '// Boss, connection established. Waiting for AI stream...\n')
+    await fs.writeFile(filePath, '// Boss, connection established. Waiting for AI stream...\n')
 
+    // 2. Safely read from your existing encrypted vault
     let geminiKey = ''
     const secureConfigPath = path.join(app.getPath('userData'), 'iris_secure_vault.json')
 
     if (fsSync.existsSync(secureConfigPath)) {
       try {
         const data = JSON.parse(fsSync.readFileSync(secureConfigPath, 'utf8'))
-        if (safeStorage.isEncryptionAvailable()) {
-          geminiKey = safeStorage.decryptString(Buffer.from(data.gemini, 'base64'))
-        } else {
-          geminiKey = Buffer.from(data.gemini, 'base64').toString('utf8')
+        if (data.gemini) {
+          if (safeStorage.isEncryptionAvailable()) {
+            geminiKey = safeStorage.decryptString(Buffer.from(data.gemini, 'base64'))
+          } else {
+            geminiKey = Buffer.from(data.gemini, 'base64').toString('utf8')
+          }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error('Vault read error:', e)
+      }
     }
 
     if (!geminiKey || geminiKey.trim() === '') {
@@ -54,25 +52,40 @@ export async function startLiveCoding({
 
     const ai = new GoogleGenAI({ apiKey: geminiKey })
 
+    // Using stable gemini-2.5-flash for coding
     const response = await ai.models.generateContentStream({
-      model: 'gemini-3-flash-preview',
-      contents: `You are an elite developer. Write the code for: "${prompt}". Output ONLY the raw code for the file ${filename}. Do NOT wrap it in markdown blockquotes.`
+      model: 'gemini-2.5-flash',
+      contents: `You are an elite developer. Write the code for: "${prompt}". Output ONLY the raw code for the file ${filename}. Do NOT wrap it in markdown blockquotes (\`\`\` language formatting). Just raw code.`
     })
 
     let fullCode = ''
 
+    // 3. Stream chunks down the IPC line to the React Monaco Editor
     for await (const chunk of response) {
       if (chunk.text) {
         fullCode += chunk.text
-        emitCodeChunk(chunk.text)
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('live-code-chunk', chunk.text)
+        }
       }
     }
 
-    fs.writeFileSync(filePath, fullCode)
-    return { success: true, filePath }
-  } catch (err) {
-    emitCodeChunk(`\n\n❌ [SYSTEM FAILURE]: ${String(err)}`)
-    return { success: false, error: String(err) }
+    // Clean up any rogue markdown blockquotes just in case the AI hallucinates them
+    let cleanCode = fullCode.replace(/^```[a-z]*\n?/, '').replace(/```$/, '')
+    await fs.writeFile(filePath, cleanCode.trim(), 'utf-8')
+
+    // 4. Tell frontend we are done so it can enable the VS Code button
+    if (mainWindow) {
+      mainWindow.webContents.send('coding-complete', { filePath })
+    }
+
+    return `Successfully coded ${filename}. File saved to ${filePath}.`
+  } catch (err: any) {
+    if (mainWindow) {
+      mainWindow.webContents.send('live-code-chunk', `\n\n❌ [SYSTEM FAILURE]: ${err.message}`)
+      mainWindow.webContents.send('coding-complete', { filePath: null })
+    }
+    return `Error during live coding: ${err.message}`
   }
 }
 
