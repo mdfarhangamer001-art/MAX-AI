@@ -13,7 +13,6 @@ export default function StockWidget() {
   const [isVisible, setIsVisible] = useState(false)
   const [stock, setStock] = useState<any>(null)
 
-  // THE FIX: Wire up listener to intercept Main Process IPC transfers
   useEffect(() => {
     if (!window.electron?.ipcRenderer) return
 
@@ -62,7 +61,7 @@ export default function StockWidget() {
   }
 
   return (
-    <div className="fixed inset-0 z-[9650] flex items-center justify-center p-10 bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-9650 flex items-center justify-center p-10 bg-black/80 backdrop-blur-sm">
       <motion.div
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
