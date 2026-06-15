@@ -93,6 +93,32 @@ It is a **Voice-First Desktop AI Assistant** that executes real-world actions ac
 
 ---
 
+# 🪡 Open Core Model
+
+IRIS follows an Open Core development model.
+
+The public repository includes:
+
+- Desktop application framework
+- User interface
+- Core infrastructure
+- Selected integrations
+- Community-facing examples
+
+The following production components are private:
+
+- Core voice orchestration engine
+- Advanced tool execution logic
+- Internal automation systems
+- Production-grade implementations
+- Certain premium modules
+
+GitHub Sponsors receive access to additional documentation, implementation examples, architecture breakdowns, and development resources depending on tier.
+
+**Sponsorship does not include access to the complete private source code.**
+
+---
+
 # 🎯 What is Voice-First?
 
 Traditional AI assistants are **text-first**: you type → they respond → you read.
@@ -576,10 +602,10 @@ IRIS/
 ### What's Protected?
 
 | Path            | Protected?  | Access        |
-| --------------- | ----------- | ------------- |
+| --------------- | ----------- | ------------- | ------ |
 | `iris-ai.ts`    | ✅ Bytecode | Sponsors only |
 | `tools.ts`      | ✅ Bytecode | Sponsors only |
-| `src/renderer/` | ✅ React    | ✅ Open      | Public |
+| `src/renderer/` | ✅ React    | ✅ Open       | Public |
 | IPC handlers    | ✅ Bytecode | Built-in only |
 
 ---
