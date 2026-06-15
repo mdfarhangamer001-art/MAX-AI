@@ -556,36 +556,49 @@ npm run build:linux  # Linux
 
 ## 🔑 System Keys & Configuration
 
-IRIS operates with **cloud-powered AI**, requiring specific API keys to function:
+IRIS operates with **cloud-powered AI**, requiring specific API keys to function.
+
+To ensure absolute privacy and safety, **IRIS does not use local `.env` files** to store keys. All credentials must be entered directly into the secure application interface, where they are encrypted locally on your machine via the native OS keychain.
+
+### ⚙️ How to Configure
+
+- Open the IRIS Desktop App.
+- Navigate to **Settings**.
+- Select the **API** tab.
+- Paste your keys and save them securely.
+
+---
 
 ### Required Keys
 
-**[Google Gemini API](https://aistudio.google.com/app/apikey)** (`VITE_GEMINI_API_KEY`)
+**[Google Gemini API](https://aistudio.google.com/app/apikey)**
 
-- Primary reasoning engine for IRIS
-- Real-time voice processing (WebRTC)
-- Multimodal vision capabilities
-- Setup: Google AI Studio → Get API Key → Create
+- Primary reasoning engine for IRIS.
+- Real-time voice processing (WebRTC).
+- Multimodal vision capabilities.
+- Setup: Google AI Studio → Get API Key → Create.
 
-**[Groq API](https://console.groq.com/keys)** (`VITE_GROQ_API_KEY`)
+**[Groq API](https://console.groq.com/keys)**
 
-- Ultra-fast inference fallback
-- Sub-100ms response times
-- Setup: Groq Console → API Keys → Create
+- Ultra-fast inference fallback.
+- Sub-100ms response times.
+- Setup: Groq Console → API Keys → Create.
+
+---
 
 ### Optional Keys
 
-**[Tavily Search API](https://app.tavily.com/home)** (`VITE_TAVILY_API_KEY`)
+**[Tavily Search API](https://app.tavily.com/home)**
 
-- Real-time web search & research
-- Powers Deep Research agent
-- Setup: Tavily Portal → Generate key
+- Real-time web search & research.
+- Powers Deep Research agent.
+- Setup: Tavily Portal → Generate key.
 
-**[Hugging Face Token](https://huggingface.co/settings/tokens)** (`VITE_HUGGINGFACE_API_KEY`)
+**[Hugging Face Token](https://huggingface.co/settings/tokens)**
 
-- Local model inference
-- Community model access
-- Setup: Create Hugging Face account → Access Tokens
+- Local model inference.
+- Community model access.
+- Setup: Create Hugging Face account → Access Tokens.
 
 ---
 
