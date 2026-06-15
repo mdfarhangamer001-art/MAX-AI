@@ -56,7 +56,7 @@ export default function LiveCodingWidget() {
   if (!isVisible) return null
 
   return (
-    <div className="absolute inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-10">
+    <div className="absolute inset-0 z-9999 flex items-center justify-center bg-black/60 backdrop-blur-sm p-10">
       <div className="w-full max-w-4xl h-[70vh] flex flex-col bg-[#0a0a0a] border border-emerald-500/30 rounded-xl shadow-[0_0_50px_rgba(16,185,129,0.1)] overflow-hidden">
         <div className="h-12 bg-black border-b border-white/5 flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
