@@ -112,10 +112,8 @@ function PremiumGlassPanel({
           : {}
       }
     >
-      {/* Top accent line */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/10 to-transparent z-0" />
 
-      {/* Noise texture */}
       <div className="pointer-events-none absolute inset-0 opacity-[0.02] mix-blend-screen z-0" />
 
       <div className="relative z-10 h-full flex flex-col">{children}</div>
@@ -138,7 +136,6 @@ function NeonProgressBar({
   return (
     <div className="flex items-center gap-2 w-full">
       <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/5">
-        {/* Background glow */}
         <div
           className="absolute inset-0 rounded-full opacity-30 blur-md transition-all duration-500"
           style={{
@@ -148,7 +145,6 @@ function NeonProgressBar({
           }}
         />
 
-        {/* Main bar */}
         <div
           className="absolute left-0 top-0 h-full rounded-full transition-all duration-700 ease-out"
           style={{
@@ -158,7 +154,6 @@ function NeonProgressBar({
           }}
         />
 
-        {/* Shimmer effect */}
         <div
           className="absolute inset-0 rounded-full opacity-40"
           style={{
@@ -262,7 +257,6 @@ export default function LeftPanelsPremium({
     network: { tx: 0, rx: 0, latency: 0 }
   })
 
-  // ─── Vision Stream Setup ───
   useEffect(() => {
     if (visionMode === 'off' || !visionMode || !isActive) {
       if (streamRef.current) {
@@ -314,7 +308,6 @@ export default function LeftPanelsPremium({
     }
   }, [visionMode, isActive])
 
-  // ─── System Stats Polling ───
   useEffect(() => {
     if (!isActive) {
       setBootPhase(true)
@@ -364,7 +357,6 @@ export default function LeftPanelsPremium({
   const ramColors = getHealthColor(ramValue, 'ram')
   const tempColors = getHealthColor(tempValue, 'temp')
 
-  // ─── Status determination ───
   const getCPUStatus = () => {
     if (!isActive) return 'idle'
     if (cpuValue > 80) return 'critical'
@@ -403,7 +395,6 @@ export default function LeftPanelsPremium({
         }
       `}</style>
 
-      {/* ─── VISION FEED PANEL ─── */}
       <PremiumGlassPanel accent="green" glow>
         <div className="p-4 flex flex-col h-full gap-3">
           {/* Header */}
@@ -440,7 +431,6 @@ export default function LeftPanelsPremium({
             </div>
           </div>
 
-          {/* Video Feed */}
           <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-white/8 bg-linear-to-br from-black/60 to-black/40 flex-1">
             <video
               ref={videoRef}
@@ -454,7 +444,6 @@ export default function LeftPanelsPremium({
 
             <canvas ref={canvasRef} width="640" height="480" className="hidden" />
 
-            {/* Fallback state */}
             <div
               className={`absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 transition-opacity duration-500 ${
                 !visionMode || visionMode === 'off'
@@ -487,7 +476,6 @@ export default function LeftPanelsPremium({
               </span>
             </div>
 
-            {/* Corner brackets */}
             {visionMode && visionMode !== 'off' && (
               <>
                 {[
@@ -505,7 +493,6 @@ export default function LeftPanelsPremium({
               </>
             )}
 
-            {/* Scanline overlay */}
             {isActive && (
               <div
                 className="pointer-events-none absolute left-0 right-0 h-px bg-linear-to-r from-transparent via-[#00ff88]/30 to-transparent z-30"
@@ -516,7 +503,6 @@ export default function LeftPanelsPremium({
         </div>
       </PremiumGlassPanel>
 
-      {/* ─── NETWORK TELEMETRY PANEL ─── */}
       <PremiumGlassPanel accent="cyan" glow>
         <div className="p-4 flex flex-col gap-4">
           {/* Header */}
@@ -553,7 +539,6 @@ export default function LeftPanelsPremium({
             </div>
           </div>
 
-          {/* Stats Grid */}
           <div className="grid grid-cols-2 gap-3">
             <PremiumGlassPanel accent="none" className="p-3">
               <span className="font-mono text-[7px] tracking-[0.2em] text-white/50 uppercase mb-2 block">
@@ -577,7 +562,6 @@ export default function LeftPanelsPremium({
             </PremiumGlassPanel>
           </div>
 
-          {/* Traffic bars */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-center h-8 w-8 rounded-lg border border-[#ec4899]/20 bg-[#ec4899]/8">
@@ -616,9 +600,7 @@ export default function LeftPanelsPremium({
         </div>
       </PremiumGlassPanel>
 
-      {/* ─── SYSTEM METRICS GRID ─── */}
       <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
-        {/* CPU Card */}
         <PremiumGlassPanel accent="green" className="p-4 flex flex-col justify-between" glow>
           <div>
             <IconBadge icon={<Cpu size={14} />} color="#00ff88" active={isActive} />
@@ -638,7 +620,6 @@ export default function LeftPanelsPremium({
           </div>
         </PremiumGlassPanel>
 
-        {/* RAM Card */}
         <PremiumGlassPanel accent="orange" className="p-4 flex flex-col justify-between" glow>
           <div>
             <IconBadge icon={<MemoryStick size={14} />} color="#f97316" active={isActive} />
@@ -662,7 +643,6 @@ export default function LeftPanelsPremium({
           </div>
         </PremiumGlassPanel>
 
-        {/* Temperature Card */}
         <PremiumGlassPanel accent="blue" className="p-4 flex flex-col justify-between" glow>
           <div>
             <IconBadge icon={<Thermometer size={14} />} color="#3b82f6" active={isActive} />
@@ -686,7 +666,6 @@ export default function LeftPanelsPremium({
           </div>
         </PremiumGlassPanel>
 
-        {/* System Info Card */}
         <PremiumGlassPanel accent="purple" className="p-4 flex flex-col justify-between" glow>
           <div>
             <IconBadge icon={<Monitor size={14} />} color="#a855f7" active={isActive} />
