@@ -4,7 +4,6 @@ import { RiMapPin2Fill, RiCloseLine, RiRouteFill, RiTimeLine } from 'react-icons
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-// Fix default Leaflet icon paths in Vite/React
 import icon from 'leaflet/dist/images/marker-icon.png'
 import iconShadow from 'leaflet/dist/images/marker-shadow.png'
 
@@ -23,7 +22,6 @@ export default function LeafletMapWidget() {
   const mapInstanceRef = useRef<L.Map | null>(null)
   const layersRef = useRef<L.Layer[]>([])
 
-  // ── 1. Listen for AI Backend Commands ──
   useEffect(() => {
     if (!window.electron?.ipcRenderer) return
 
@@ -44,18 +42,15 @@ export default function LeafletMapWidget() {
     }
   }, [])
 
-  // ── 2. Direct Vanilla Leaflet Integration (Crash-Proof) ──
   useEffect(() => {
     if (!mapData || !mapContainerRef.current) return
 
-    // Initialize Map only once
     if (!mapInstanceRef.current) {
       mapInstanceRef.current = L.map(mapContainerRef.current, {
         zoomControl: false, // We hide the default ugly zoom buttons
         attributionControl: false
       })
 
-      // Load Premium Dark Mode Tiles
       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(
         mapInstanceRef.current
       )
@@ -63,11 +58,9 @@ export default function LeafletMapWidget() {
 
     const map = mapInstanceRef.current
 
-    // Clear previous markers and routes
     layersRef.current.forEach((layer) => map.removeLayer(layer))
     layersRef.current = []
 
-    // Draw Single Location
     if (mapData.mode === 'point') {
       map.flyTo([mapData.lat, mapData.lng], 13, { duration: 1.5 })
 
@@ -78,7 +71,6 @@ export default function LeafletMapWidget() {
       layersRef.current.push(marker)
     }
 
-    // Draw Navigation Route
     else if (mapData.mode === 'route') {
       const startMarker = L.marker(mapData.start)
         .bindPopup(`Origin: ${mapData.info.origin}`)
@@ -97,12 +89,10 @@ export default function LeafletMapWidget() {
 
       layersRef.current.push(startMarker, endMarker, routeLine)
 
-      // Automatically zoom out to fit the entire route on screen
       map.fitBounds(routeLine.getBounds(), { padding: [50, 50], duration: 1.5 })
     }
   }, [mapData])
 
-  // ── 3. Cleanup Function ──
   const closeMap = () => {
     if (mapInstanceRef.current) {
       mapInstanceRef.current.remove()
@@ -122,7 +112,6 @@ export default function LeafletMapWidget() {
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="relative w-full h-full max-w-6xl max-h-[85vh] bg-zinc-950 border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col"
           >
-            {/* ── TOP HUD BAR ── */}
             <div className="absolute top-6 left-6 right-6 z-1000 flex justify-between items-start pointer-events-none">
               <div className="bg-black/80 backdrop-blur-md border border-white/10 px-5 py-3 rounded-2xl pointer-events-auto shadow-xl flex items-center gap-4">
                 {mapData.mode === 'route' ? (
@@ -171,7 +160,6 @@ export default function LeafletMapWidget() {
               </button>
             </div>
 
-            {/* ── MAP CONTAINER (No React-Leaflet required) ── */}
             <div ref={mapContainerRef} className="flex-1 w-full bg-[#050505]" />
           </motion.div>
         </div>
