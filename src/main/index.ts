@@ -210,7 +210,6 @@ app.whenReady().then(() => {
   ipcMain.removeHandler('secure-get-keys')
   ipcMain.removeHandler('check-keys-exist')
 
-  // ─── 2. SECURE SAVE HANDLER ───
   ipcMain.handle('secure-save-keys', async (_, { groqKey, geminiKey, hfKey, tailvyKey }) => {
     try {
       let groqEncrypted, geminiEncrypted, hfEncrypted, tailvyEncrypted
@@ -242,7 +241,6 @@ app.whenReady().then(() => {
     }
   })
 
-  // ─── 3. SECURE GET HANDLER ───
   ipcMain.handle('secure-get-keys', async () => {
     if (!fs.existsSync(secureConfigPath)) return null
     try {
@@ -271,7 +269,6 @@ app.whenReady().then(() => {
     }
   })
 
-  // ─── 4. VAULT CHECK HANDLER ───
   ipcMain.handle('check-keys-exist', () => {
     return fs.existsSync(secureConfigPath)
   })
