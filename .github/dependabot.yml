@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # Maintain dependencies for npm (Node.js/Electron)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    # Security updates override these limits
+    ignore:
+      # Electron major updates often break native bindings (like nut.js or WebRTC), 
+      # so we ignore them for automated PRs and handle them manually.
+      - dependency-name: "electron"
+        versions: ["*"]
+      - dependency-name: "electron-builder"
+        versions: ["*"]
