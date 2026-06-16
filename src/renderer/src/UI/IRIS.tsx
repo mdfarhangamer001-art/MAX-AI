@@ -5,7 +5,8 @@ import {
   RiFolderOpenLine,
   RiPhoneLine,
   RiSettings4Line,
-  RiImageLine
+  RiImageLine,
+  RiAppsLine
 } from 'react-icons/ri'
 import ViewSkeleton from '@renderer/components/ViewSkelrton'
 
@@ -13,8 +14,9 @@ import DashboardView from '../views/Dashboard'
 import PhoneView from '../views/Phone'
 import { Status } from '@renderer/types/panel'
 import SettingsView from '@renderer/views/Settings'
+import AppsView from '@renderer/views/APP'
 
-const WorkFlowEditorView = lazy(() => import('../views/WorkFlowEditor'))
+// const WorkFlowEditorView = lazy(() => import('../views/WorkFlowEditor'))
 const NotesView = lazy(() => import('../views/Notes'))
 const GalleryView = lazy(() => import('../views/Gallery'))
 
@@ -41,7 +43,8 @@ const IRIS = ({
 
   const tabs = [
     { id: 'DASHBOARD', label: 'Command', icon: <RiLayoutGridLine size={16} /> },
-    { id: 'Macros', label: 'Macros', icon: <RiBrainLine size={16} /> },
+    // { id: 'Macros', label: 'Macros', icon: <RiBrainLine size={16} /> },
+    { id: 'APPS', label: 'Apps', icon: <RiAppsLine size={16} /> },
     { id: 'NOTES', label: 'Notes', icon: <RiFolderOpenLine size={16} /> },
     { id: 'GALLERY', label: 'Gallery', icon: <RiImageLine size={16} /> },
     { id: 'PHONE', label: 'Mobile', icon: <RiPhoneLine size={16} /> },
@@ -120,7 +123,8 @@ const IRIS = ({
           </div>
 
           <Suspense fallback={<ViewSkeleton />}>
-            {activeTab === 'Macros' && <WorkFlowEditorView />}
+            {/* {activeTab === 'Macros' && <WorkFlowEditorView />} */}
+            {activeTab === 'APPS' && <AppsView />}
             {activeTab === 'NOTES' && <NotesView glassPanel={glassPanel} />}
             {activeTab === 'GALLERY' && <GalleryView />}
             {activeTab === 'SETTINGS' && <SettingsView isSystemActive={isConnected} />}
