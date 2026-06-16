@@ -1,12 +1,10 @@
 import { useState, Suspense, lazy } from 'react'
 import {
   RiLayoutGridLine,
-  RiBrainLine,
   RiFolderOpenLine,
   RiPhoneLine,
   RiSettings4Line,
-  RiImageLine,
-  RiAppsLine
+  RiImageLine
 } from 'react-icons/ri'
 import ViewSkeleton from '@renderer/components/ViewSkelrton'
 
@@ -93,7 +91,6 @@ const IRIS = ({
               className={`text-[9px] font-mono tracking-widest uppercase mt-1 ${isConnected ? 'text-emerald-500' : 'text-red-500'}`}
             >
               {isConnected ? 'Connected' : 'Offline'}
-              
             </span>
           </div>
           <div
