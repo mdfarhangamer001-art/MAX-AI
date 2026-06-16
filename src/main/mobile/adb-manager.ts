@@ -3,8 +3,9 @@ import { exec } from 'child_process'
 import util from 'util'
 import fs from 'fs/promises'
 import path from 'path'
+import { promisify } from 'util'
 
-const execAsync = util.promisify(exec)
+const execAsync = promisify(exec)
 
 let activeDevice: { ip: string; port: string } | null = null
 
@@ -434,68 +435,95 @@ export async function executeCameraControl({
   const target = `-s ${activeDevice.ip}:${activeDevice.port}`
 
   try {
-    // 1. Ensure the local Gallery folder exists at the app path root
-    // Change 'userData' to 'appData' or your preferred Electron root path if necessary
+    // 1. Safe Asynchronous Directory Creation
     const galleryDirectory = path.join(app.getPath('userData'), 'Gallery')
+
+    // This single line handles both the existence check and folder creation asynchronously
     await fs.mkdir(galleryDirectory, { recursive: true })
 
-    // 2. Wake the device stealthily
+    // 2. Wake Device Stealthily
     await execAsync(`adb ${target} shell input keyevent KEYCODE_WAKEUP`)
 
-    // 3. Map the Intent and Lens Extra (0 = Back, 1 = Front)
-    const facingId = lens === 'front' ? 1 : 0
+    // 3. BASELINE CHECK: Get the old file so we don't pull a duplicate
+    const { stdout: beforeFileStr } = await execAsync(
+      `adb ${target} shell "ls -t /sdcard/DCIM/Camera 2>/dev/null | head -n 1"`
+    ).catch(() => ({ stdout: '' }))
+    const oldFile = beforeFileStr.trim()
+
+    // 4. Force specific Lens Intent (Mapping all known manufacturer flags)
+    const isFront = lens === 'front'
     const intentAction =
       mode === 'video'
         ? 'android.media.action.VIDEO_CAMERA'
         : 'android.media.action.STILL_IMAGE_CAMERA'
 
-    // Launch camera app with lens parameters
-    await execAsync(
-      `adb ${target} shell am start -a ${intentAction} --ei android.intent.extras.CAMERA_FACING ${facingId}`
+    const extras = isFront
+      ? `--ez android.intent.extra.USE_FRONT_CAMERA true --ez com.google.assistant.extra.USE_FRONT_CAMERA true --ei android.intent.extras.CAMERA_FACING 1`
+      : `--ez android.intent.extra.USE_FRONT_CAMERA false --ei android.intent.extras.CAMERA_FACING 0`
+
+    // Force stop common camera apps to clear cache/previous lens state before opening
+    await execAsync(`adb ${target} shell am force-stop com.google.android.GoogleCamera`).catch(
+      () => {}
     )
+    await execAsync(`adb ${target} shell am force-stop com.sec.android.app.camera`).catch(() => {})
 
-    // Allow hardware layers and sensors to spin up
-    await new Promise((r) => setTimeout(r, 2000))
+    // Launch Camera App
+    await execAsync(`adb ${target} shell am start -a ${intentAction} ${extras}`)
 
-    // 4. Capture Cycle
+    // Give hardware sensors time to initialize
+    await new Promise((r) => setTimeout(r, 2500))
+
+    // 5. Accurate Capture / Record Cycle
     if (mode === 'video') {
-      await execAsync(`adb ${target} shell input keyevent KEYCODE_CAMERA`)
-      await new Promise((r) => setTimeout(r, duration * 1000))
-      await execAsync(`adb ${target} shell input keyevent KEYCODE_CAMERA`)
-      await new Promise((r) => setTimeout(r, 2000))
+      await execAsync(`adb ${target} shell input keyevent KEYCODE_CAMERA`) // Start recording
+      await new Promise((r) => setTimeout(r, duration * 1000)) // Exact hold duration
+      await execAsync(`adb ${target} shell input keyevent KEYCODE_CAMERA`) // Stop recording
     } else {
-      await execAsync(`adb ${target} shell input keyevent KEYCODE_CAMERA`)
-      await new Promise((r) => setTimeout(r, 1500))
+      await execAsync(`adb ${target} shell input keyevent KEYCODE_CAMERA`) // Snap photo
     }
 
-    // 5. Extract the absolute most recent media asset from the phone storage
-    const { stdout: latestFile } = await execAsync(
-      `adb ${target} shell "ls -t /sdcard/DCIM/Camera | head -n 1"`
-    )
-    const cleanFileName = latestFile.trim()
+    // 6. POLLING LOOP: Wait for the OS to save the NEW file to the disk
+    let cleanFileName = ''
+    let attempts = 0
+    while (attempts < 10) {
+      await new Promise((r) => setTimeout(r, 1000))
 
-    if (!cleanFileName) return { success: false, error: 'No media file found on device.' }
+      const { stdout: latestFileStr } = await execAsync(
+        `adb ${target} shell "ls -t /sdcard/DCIM/Camera 2>/dev/null | head -n 1"`
+      ).catch(() => ({ stdout: '' }))
 
-    // 6. Generate matching file names for your Visual Vault
+      const newFile = latestFileStr.trim()
+
+      if (newFile && newFile !== oldFile) {
+        cleanFileName = newFile
+        break
+      }
+      attempts++
+    }
+
+    if (!cleanFileName) {
+      await execAsync(`adb ${target} shell input keyevent KEYCODE_HOME`)
+      return { success: false, error: 'Camera hardware timeout. Media failed to write to disk.' }
+    }
+
+    // 7. Generate File Path & Pull to PC
     const extension = cleanFileName.split('.').pop() || (mode === 'video' ? 'mp4' : 'jpg')
     const timestamp = Date.now()
-    const targetFilename = `IRIS_${mode}_${timestamp}.${extension}`
+    const targetFilename = `IRIS_Capture_${timestamp}.${extension}`
     const pcPath = path.join(galleryDirectory, targetFilename)
 
-    // Pull the asset directly into your local app root Gallery directory
     await execAsync(`adb ${target} pull "/sdcard/DCIM/Camera/${cleanFileName}" "${pcPath}"`)
 
-    // 7. Return device cleanly to home screen
+    // 8. Cover tracks: return to Home Screen
     await execAsync(`adb ${target} shell input keyevent KEYCODE_HOME`)
 
-    // 8. Perfect response object containing metadata for tracking
     return {
       success: true,
       galleryItem: {
         filename: targetFilename,
-        displayName: `${mode} ${new Date(timestamp).toLocaleTimeString()}`,
+        displayName: `${mode} Capture (${lens})`,
         path: pcPath,
-        url: `file://${pcPath}`, // Electron file protocol link
+        url: `file://${pcPath}`,
         createdAt: new Date(timestamp)
       }
     }
