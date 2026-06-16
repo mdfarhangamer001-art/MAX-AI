@@ -8,7 +8,6 @@ const execAsync = util.promisify(exec)
 
 let activeDevice: { ip: string; port: string } | null = null
 
-
 function getPaths() {
   const dirPath = path.join(app.getPath('userData'), 'Connected Devices')
   const historyPath = path.join(dirPath, 'Connect-mobile.json')
@@ -38,7 +37,6 @@ async function saveDeviceToHistory(ip: string, port: string, model: string) {
   } catch (e) {}
 }
 
-
 export async function getAdbHistory() {
   try {
     const { historyPath } = getPaths()
@@ -51,6 +49,13 @@ export async function getAdbHistory() {
 
 export async function connectAdb({ ip, port }: { ip: string; port: string }) {
   try {
+    // 🚨 FIX: Purge dead daemon connections before initializing TCP/IP link
+    await execAsync(`adb kill-server`).catch(() => {})
+    await execAsync(`adb start-server`).catch(() => {})
+
+    // Give daemon breathing room
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
     const { stdout } = await execAsync(`adb connect ${ip}:${port}`)
 
     if (
@@ -64,7 +69,9 @@ export async function connectAdb({ ip, port }: { ip: string; port: string }) {
           `adb -s ${ip}:${port} shell getprop ro.product.model`
         )
         await saveDeviceToHistory(ip, port, modelOut.trim().toUpperCase() || 'UNKNOWN DEVICE')
-      } catch (e) {}
+      } catch (e) {
+        console.error('Model fetch failed, but uplink secured.')
+      }
 
       return { success: true }
     }
@@ -89,7 +96,7 @@ export async function takeAdbScreenshot() {
   if (!activeDevice) return { success: false }
   return new Promise((resolve) => {
     exec(
-      `adb -s ${activeDevice?.ip}:${!activeDevice?.port} exec-out screencap -p`,
+      `adb -s ${activeDevice?.ip}:${activeDevice?.port} exec-out screencap -p`,
       { encoding: 'buffer', maxBuffer: 1024 * 1024 * 20 },
       (error, stdout) => {
         if (error) {
@@ -183,15 +190,12 @@ export async function getMobileInfoAi() {
 
 export async function openAdbApp(packageName: string) {
   if (!activeDevice) return { success: false, error: 'No phone connected.' }
-
   try {
     const target = `-s ${activeDevice.ip}:${activeDevice.port}`
-
     if (packageName === 'android.media.action.STILL_IMAGE_CAMERA') {
       await execAsync(`adb ${target} shell am start -a android.media.action.STILL_IMAGE_CAMERA`)
       return { success: true }
     }
-
     await execAsync(
       `adb ${target} shell monkey -p ${packageName} -c android.intent.category.LAUNCHER 1`
     )
@@ -203,15 +207,12 @@ export async function openAdbApp(packageName: string) {
 
 export async function closeAdbApp(packageName: string) {
   if (!activeDevice) return { success: false, error: 'No phone connected.' }
-
   try {
     const target = `-s ${activeDevice.ip}:${activeDevice.port}`
-
     if (packageName === 'android.media.action.STILL_IMAGE_CAMERA') {
       await execAsync(`adb ${target} shell am force-stop com.google.android.GoogleCamera`)
       return { success: true }
     }
-
     await execAsync(`adb ${target} shell am force-stop ${packageName}`)
     return { success: true }
   } catch (e: any) {
@@ -415,6 +416,62 @@ export async function toggleAdbHardware({ setting, state }: { setting: string; s
     }
 
     return { success: false, error: `I don't know how to toggle: ${setting}` }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+// ==========================================
+// 🚀 NEW: VIRAL FEATURE EXPANSION PACK
+// ==========================================
+
+export async function silentCameraCapture() {
+  if (!activeDevice) return { success: false, error: 'No phone connected.' }
+  const target = `-s ${activeDevice.ip}:${activeDevice.port}`
+  try {
+    await execAsync(`adb ${target} shell input keyevent KEYCODE_WAKEUP`)
+    await execAsync(`adb ${target} shell am start -a android.media.action.STILL_IMAGE_CAMERA`)
+    await new Promise((r) => setTimeout(r, 1500))
+    await execAsync(`adb ${target} shell input keyevent KEYCODE_CAMERA`)
+    await new Promise((r) => setTimeout(r, 1000))
+
+    const { stdout: latestFile } = await execAsync(
+      `adb ${target} shell "ls -t /sdcard/DCIM/Camera | head -n 1"`
+    )
+    const cleanFileName = latestFile.trim()
+
+    if (!cleanFileName) return { success: false, error: 'No image found.' }
+
+    const pcPath = path.join(app.getPath('pictures'), `IRIS_Scan_${Date.now()}.jpg`)
+    await execAsync(`adb ${target} pull "/sdcard/DCIM/Camera/${cleanFileName}" "${pcPath}"`)
+
+    return { success: true, filePath: pcPath }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+export async function pushClipboardToMobile(text: string) {
+  if (!activeDevice) return { success: false, error: 'No phone connected.' }
+  const target = `-s ${activeDevice.ip}:${activeDevice.port}`
+  try {
+    const escapedText = text.replace(/ /g, '%s')
+    await execAsync(`adb ${target} shell input text "${escapedText}"`)
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+export async function deployApkToMobile(apkPath: string, packageName: string) {
+  if (!activeDevice) return { success: false, error: 'No phone connected.' }
+  const target = `-s ${activeDevice.ip}:${activeDevice.port}`
+  try {
+    await execAsync(`adb ${target} install -r "${apkPath}"`)
+    await execAsync(
+      `adb ${target} shell monkey -p ${packageName} -c android.intent.category.LAUNCHER 1`
+    )
+    return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }
   }
