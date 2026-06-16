@@ -80,7 +80,6 @@ export default function ResearchWidget() {
         })
       }
 
-      // Close the widget after 8 seconds so user can read the results
       setTimeout(() => setIsOpen(false), 8000)
     })
 
