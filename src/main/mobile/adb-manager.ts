@@ -437,8 +437,6 @@ export async function executeCameraControl({
   try {
     // 1. Safe Asynchronous Directory Creation
     const galleryDirectory = path.join(app.getPath('userData'), 'Gallery')
-
-    // This single line handles both the existence check and folder creation asynchronously
     await fs.mkdir(galleryDirectory, { recursive: true })
 
     // 2. Wake Device Stealthily
@@ -450,7 +448,7 @@ export async function executeCameraControl({
     ).catch(() => ({ stdout: '' }))
     const oldFile = beforeFileStr.trim()
 
-    // 4. Force specific Lens Intent (Mapping all known manufacturer flags)
+    // 4. Force specific Lens Intent
     const isFront = lens === 'front'
     const intentAction =
       mode === 'video'
@@ -461,7 +459,7 @@ export async function executeCameraControl({
       ? `--ez android.intent.extra.USE_FRONT_CAMERA true --ez com.google.assistant.extra.USE_FRONT_CAMERA true --ei android.intent.extras.CAMERA_FACING 1`
       : `--ez android.intent.extra.USE_FRONT_CAMERA false --ei android.intent.extras.CAMERA_FACING 0`
 
-    // Force stop common camera apps to clear cache/previous lens state before opening
+    // Force stop camera apps to clear previous lens states
     await execAsync(`adb ${target} shell am force-stop com.google.android.GoogleCamera`).catch(
       () => {}
     )
@@ -470,19 +468,28 @@ export async function executeCameraControl({
     // Launch Camera App
     await execAsync(`adb ${target} shell am start -a ${intentAction} ${extras}`)
 
-    // Give hardware sensors time to initialize
-    await new Promise((r) => setTimeout(r, 2500))
+    // 🚨 BUG FIX 1: The Hardware Warmup
+    // We MUST wait 4.5 seconds for the Android OS to fully load the camera UI before pressing the shutter.
+    await new Promise((r) => setTimeout(r, 4500))
 
     // 5. Accurate Capture / Record Cycle
     if (mode === 'video') {
-      await execAsync(`adb ${target} shell input keyevent KEYCODE_CAMERA`) // Start recording
-      await new Promise((r) => setTimeout(r, duration * 1000)) // Exact hold duration
-      await execAsync(`adb ${target} shell input keyevent KEYCODE_CAMERA`) // Stop recording
+      await execAsync(`adb ${target} shell input keyevent KEYCODE_CAMERA`) // START RECORDING
+
+      // Wait EXACT requested duration
+      await new Promise((r) => setTimeout(r, duration * 1000))
+
+      await execAsync(`adb ${target} shell input keyevent KEYCODE_CAMERA`) // STOP RECORDING
+
+      // 🚨 BUG FIX 2: Video Encoding Buffer
+      // MP4 files take 3-4 seconds to mux and save to disk after recording stops.
+      await new Promise((r) => setTimeout(r, 3500))
     } else {
-      await execAsync(`adb ${target} shell input keyevent KEYCODE_CAMERA`) // Snap photo
+      await execAsync(`adb ${target} shell input keyevent KEYCODE_CAMERA`) // SNAP PHOTO
+      await new Promise((r) => setTimeout(r, 2000)) // HDR Processing delay
     }
 
-    // 6. POLLING LOOP: Wait for the OS to save the NEW file to the disk
+    // 6. POLLING LOOP: Wait for the OS to verify the NEW file on the disk
     let cleanFileName = ''
     let attempts = 0
     while (attempts < 10) {
@@ -528,7 +535,6 @@ export async function executeCameraControl({
       }
     }
   } catch (e: any) {
-    console.log(e)
     return { success: false, error: e.message }
   }
 }
