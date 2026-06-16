@@ -435,22 +435,17 @@ export async function executeCameraControl({
   const target = `-s ${activeDevice.ip}:${activeDevice.port}`
 
   try {
-    // 1. Safe Asynchronous Directory Creation
     const galleryDirectory = path.join(app.getPath('userData'), 'Gallery')
     await fs.mkdir(galleryDirectory, { recursive: true })
 
-    // 2. Wake Device Stealthily
     await execAsync(`adb ${target} shell input keyevent KEYCODE_WAKEUP`)
 
-    // 3. BASELINE CHECK: Get the old file (Strictly filtering for actual media files, ignoring .temp)
     const mediaFilterCmd = `grep -i -e '\\.jpg$' -e '\\.jpeg$' -e '\\.mp4$'`
     const { stdout: beforeFileStr } = await execAsync(
       `adb ${target} shell "ls -t /sdcard/DCIM/Camera 2>/dev/null | ${mediaFilterCmd} | head -n 1"`
     ).catch(() => ({ stdout: '' }))
     const oldFile = beforeFileStr.trim()
 
-    // 4. 🚨 CRITICAL FIX: DYNAMIC COLD BOOT
-    // Find the exact camera package installed on THIS specific phone and assassinate it
     const { stdout: resolveOut } = await execAsync(
       `adb ${target} shell cmd package resolve-activity -a android.media.action.STILL_IMAGE_CAMERA`
     ).catch(() => ({ stdout: '' }))
@@ -459,7 +454,6 @@ export async function executeCameraControl({
     if (pkgMatch && pkgMatch[1]) {
       await execAsync(`adb ${target} shell am force-stop ${pkgMatch[1]}`).catch(() => {})
     } else {
-      // Fallbacks if resolve fails
       await execAsync(`adb ${target} shell am force-stop com.google.android.GoogleCamera`).catch(
         () => {}
       )
@@ -469,7 +463,6 @@ export async function executeCameraControl({
       await execAsync(`adb ${target} shell am force-stop com.android.camera`).catch(() => {})
     }
 
-    // 5. 🚨 CRITICAL FIX: MEGA-PAYLOAD INTENT
     const isFront = lens === 'front'
     const intentAction =
       mode === 'video'
