@@ -1,0 +1,160 @@
+import { exec } from 'child_process'
+import os from 'os'
+import path from 'path'
+import fs from 'fs/promises'
+import { app, shell } from 'electron'
+
+// Helper utility for terminal system queries
+const runCommand = (cmd: string): Promise<string> => {
+  return new Promise((resolve) => {
+    exec(cmd, (err, stdout) => {
+      resolve(err ? '' : stdout.trim())
+    })
+  })
+}
+
+/**
+ * Retrieves a distinct list of running visible window application names
+ */
+export async function getRunningApps(): Promise<string[]> {
+  try {
+    if (os.platform() === 'win32') {
+      const cmd = `powershell "Get-Process | Where-Object {$_.MainWindowTitle -ne ''} | Select-Object -ExpandProperty ProcessName"`
+      const output = await runCommand(cmd)
+      const apps = output
+        .split(/\r?\n/)
+        .map((a) => a.trim())
+        .filter((a) => a)
+      return [...new Set(apps)]
+    }
+
+    if (os.platform() === 'darwin') {
+      const cmd = `osascript -e 'tell application "System Events" to get name of (processes where background only is false)'`
+      const output = await runCommand(cmd)
+      return output.split(', ').map((s) => s.trim())
+    }
+
+    return []
+  } catch (e) {
+    return []
+  }
+}
+
+/**
+ * Opens any file or path using the OS default application handler
+ */
+export async function openFile(filePath: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const error = await shell.openPath(filePath)
+    if (error) return { success: false, error }
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: 'Internal System Error' }
+  }
+}
+
+/**
+ * Highlights and displays the targeted item inside its parent OS directory window
+ */
+export async function revealFile(filePath: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    shell.showItemInFolder(filePath)
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: 'Failed to reveal item' }
+  }
+}
+
+/**
+ * Reads the directory layout, explicitly flagging files versus subfolders
+ */
+export async function readDirectory(directoryPath: string): Promise<string> {
+  try {
+    const entries = await fs.readdir(directoryPath, { withFileTypes: true })
+    if (entries.length === 0) return 'Directory is empty.'
+
+    const structuredList = entries.map((entry) => {
+      const marker = entry.isDirectory() ? '[FOLDER]' : '[FILE]'
+      return `${marker} ${entry.name}`
+    })
+
+    return structuredList.join('\n')
+  } catch (err) {
+    return `Error reading directory: ${err}`
+  }
+}
+
+/**
+ * Reads text contents from specified file targets up to a 3000 character safety buffer
+ */
+export async function readFile(filePath: string): Promise<string> {
+  try {
+    const content = await fs.readFile(filePath, 'utf-8')
+    return content.length > 3000 ? content.slice(0, 3000) + '\n...(Truncated)' : content
+  } catch (err) {
+    return `Error reading file: ${err}`
+  }
+}
+
+/**
+ * Writes or overwrites text streams into target paths, defaulting targets to User Desktop
+ */
+export async function writeFile({
+  fileName,
+  content
+}: {
+  fileName: string
+  content: string
+}): Promise<string> {
+  try {
+    const isAbsolutePath = fileName.includes('/') || fileName.includes('\\')
+    const targetPath = isAbsolutePath ? fileName : path.join(app.getPath('desktop'), fileName)
+
+    // Automatically ensure the containing directory structure exists
+    await fs.mkdir(path.dirname(targetPath), { recursive: true })
+    await fs.writeFile(targetPath, content, 'utf-8')
+    return `Success: File safely written to ${targetPath}`
+  } catch (err) {
+    return `Error writing file: ${err}`
+  }
+}
+
+export interface FileOpArgs {
+  operation: 'copy' | 'move' | 'delete'
+  sourcePath: string
+  destPath?: string
+}
+
+/**
+ * Natively processes recursive manipulations (Copy, Move, Delete) across both files and directories
+ */
+export async function executeFileOp({
+  operation,
+  sourcePath,
+  destPath
+}: FileOpArgs): Promise<string> {
+  try {
+    switch (operation) {
+      case 'copy':
+        if (!destPath) return 'Error: Destination path required for copy.'
+        // cp with recursive handles files and directory structures effortlessly
+        await fs.cp(sourcePath, destPath, { recursive: true })
+        return `Success: Copied to ${destPath}`
+
+      case 'move':
+        if (!destPath) return 'Error: Destination path required for move.'
+        await fs.rename(sourcePath, destPath)
+        return `Success: Moved to ${destPath}`
+
+      case 'delete':
+        // rm with force and recursive cleanly purges empty/populated folders or items
+        await fs.rm(sourcePath, { recursive: true, force: true })
+        return `Success: Safely deleted ${sourcePath}`
+
+      default:
+        return `Error: Unknown operation type '${operation}'`
+    }
+  } catch (err) {
+    return `System Error executing file operation: ${err}`
+  }
+}
