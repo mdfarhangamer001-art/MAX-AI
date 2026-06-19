@@ -57,14 +57,12 @@ $GeoWatcher.Stop()
   return null
 }
 
-// ─── 2. FREE REVERSE GEOCODING (LAT/LON TO ADDRESS) ───
 async function reverseGeocode(lat: number, lon: number): Promise<string> {
   try {
-    // OpenStreetMap Nominatim API (100% Free, No Key Required)
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
       {
-        headers: { 'User-Agent': 'IRIS-Desktop-App/1.0' } // Required by their free-use policy
+        headers: { 'User-Agent': 'IRIS-Desktop-App/1.0' }
       }
     )
     const data = await res.json()
