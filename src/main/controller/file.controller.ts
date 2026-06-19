@@ -71,8 +71,6 @@ export async function readDirectory(directoryPath: string): Promise<string> {
   }
 }
 
-/**
- */
 export async function readFile(filePath: string): Promise<string> {
   try {
     const content = await fs.readFile(filePath, 'utf-8')
