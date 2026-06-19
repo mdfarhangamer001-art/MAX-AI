@@ -55,8 +55,6 @@ export async function revealFile(filePath: string): Promise<{ success: boolean; 
   }
 }
 
-/**
- */
 export async function readDirectory(directoryPath: string): Promise<string> {
   try {
     const entries = await fs.readdir(directoryPath, { withFileTypes: true })
