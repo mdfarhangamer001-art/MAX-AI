@@ -143,6 +143,7 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.electron')
 
   registerFrontendIPC()
+  initWakeWord(mainWindow?.webContents)
 
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true
@@ -373,10 +374,6 @@ app.whenReady().then(() => {
   })
 
   createWindow()
-  
-  if (mainWindow) {
-    initWakeWord(mainWindow.webContents)
-  }
 
   globalShortcut.register('CommandOrControl+Shift+I', () => toggleOverlayMode())
   ipcMain.on('toggle-overlay', () => toggleOverlayMode())
