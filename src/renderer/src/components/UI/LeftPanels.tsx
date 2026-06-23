@@ -212,6 +212,7 @@ function BootSequence({ isActive, osType }: { isActive: boolean; osType: string 
       }, 100)
       return () => clearInterval(bootInterval)
     }
+    return undefined
   }, [isActive, bootPhase])
 
   if (bootPhase && isActive) {
