@@ -9,6 +9,7 @@ import {
   ArrowDown,
   Radio
 } from 'lucide-react'
+import { getSystemStatus } from '@renderer/services/system-info'
 
 function getHealthColor(value: number, type: 'cpu' | 'ram' | 'temp') {
   let ratio = Math.min(1, Math.max(0, value / 100))
@@ -250,7 +251,7 @@ export default function LeftPanelsPremium({ status, visionMode }: any) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
-  const [stats, setStats] = useState<SystemStats>({
+  const [stats, setStats] = useState<any>({
     cpu: '0.0',
     memory: { total: '0.0', free: '0.0', usedPercentage: '0.0' },
     temperature: 0,
