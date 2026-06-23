@@ -14,7 +14,6 @@ export default function Dashboard({
 }: {
   isConnected: boolean
   toggleConnection: () => void
-  systemStatus: Status
   isSpeaking: boolean
   isMuted: boolean
   handleMicToggle: () => void

@@ -111,7 +111,7 @@ const IRIS = ({
             <PhoneView glassPanel={glassPanel} />
           </div>
 
-          <Suspense fallback={<ViewSkeleton />}>
+          <Suspense fallback={<div className="flex h-full items-center justify-center font-mono text-zinc-500">Loading Module...</div>}>
             {activeTab === 'NOTES' && <NotesView glassPanel={glassPanel} />}
             {activeTab === 'GALLERY' && <GalleryView />}
             {activeTab === 'SETTINGS' && <SettingsView isSystemActive={isConnected} />}
