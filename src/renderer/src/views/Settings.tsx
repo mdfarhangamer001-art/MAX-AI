@@ -81,11 +81,6 @@ export default function SettingsView({ isSystemActive }: SettingsProps) {
   const [updateNotes, setUpdateNotes] = useState('No new updates detected. Your system is current.')
   const [downloadProgress, setDownloadProgress] = useState(0)
 
-
-  const checkForUpdates = () => window.electron.ipcRenderer.invoke('check-for-updates')
-  const downloadUpdate = () => window.electron.ipcRenderer.invoke('download-update')
-  const installUpdate = () => window.electron.ipcRenderer.invoke('install-update')
-
   const saveApiKeys = async () => {
     if (window.electron?.ipcRenderer) {
       try {
