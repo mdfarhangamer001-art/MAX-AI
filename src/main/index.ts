@@ -16,7 +16,6 @@ import fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
-import { autoUpdater } from 'electron-updater'
 
 app.commandLine.appendSwitch('use-fake-ui-for-media-stream')
 
