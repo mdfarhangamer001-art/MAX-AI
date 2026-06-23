@@ -181,7 +181,6 @@ function IconBadge({
   )
 }
 
-// Isolated Boot Sequence component to prevent parent re-renders every 100ms
 function BootSequence({ isActive, osType }: { isActive: boolean; osType: string }) {
   const [bootPhase, setBootPhase] = useState(true)
   const [bootLogs, setBootLogs] = useState<string[]>([])
