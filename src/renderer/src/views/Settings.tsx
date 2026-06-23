@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GiArtificialIntelligence } from 'react-icons/gi'
 import {
@@ -6,7 +6,7 @@ import {
   RiSave3Line,
   RiShieldKeyholeLine,
   RiPlugLine,
-  RiTerminalWindowLine,
+  RiTerminalWindowLine
 } from 'react-icons/ri'
 
 interface SettingsProps {
@@ -39,8 +39,6 @@ export default function SettingsView({ isSystemActive }: SettingsProps) {
   const [hfKey, setHfKey] = useState('')
   const [tavilyKey, settavilyKey] = useState('')
 
-
-
   useEffect(() => {
     if (!window.electron?.ipcRenderer) return undefined
 
@@ -53,7 +51,6 @@ export default function SettingsView({ isSystemActive }: SettingsProps) {
       }
     })
   }, [])
-
 
   const saveApiKeys = async () => {
     if (window.electron?.ipcRenderer) {
