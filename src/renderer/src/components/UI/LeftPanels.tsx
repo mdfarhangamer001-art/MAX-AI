@@ -12,7 +12,6 @@ import {
 import { getSystemStatus, SystemStats } from '@renderer/services/system-info'
 import { LeftPanelsProps } from '@renderer/types/panel'
 
-// Reusable color generation for health status
 function getHealthColor(value: number, type: 'cpu' | 'ram' | 'temp') {
   let ratio = Math.min(1, Math.max(0, value / 100))
   if (type === 'temp') {
@@ -25,7 +24,6 @@ function getHealthColor(value: number, type: 'cpu' | 'ram' | 'temp') {
   return mainColor
 }
 
-// Optimized Pulse using standard CSS animation on opacity/transform
 function PulseIndicator({ active, color = '#00ff88' }: { active: boolean; color?: string }) {
   return (
     <span className="relative flex h-2 w-2">
