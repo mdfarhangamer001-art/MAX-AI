@@ -99,57 +99,6 @@ export default function SettingsView({ isSystemActive }: SettingsProps) {
     }
   }
 
-  const updateMasterPin = async () => {
-    if (newPin.length !== 4 || !window.electron?.ipcRenderer) return
-    await window.electron.ipcRenderer.invoke('setup-vault-pin', newPin)
-    setNewPin('')
-    alert('Master PIN has been updated.')
-  }
-
-  const startFaceEnrollment = async () => {
-    setIsScanningFace(true)
-    setEnrollStatus('Starting camera...')
-    try {
-      await Promise.all([
-        faceapi.nets.ssdMobilenetv1.loadFromUri('./models'),
-        faceapi.nets.faceLandmark68Net.loadFromUri('./models'),
-        faceapi.nets.faceRecognitionNet.loadFromUri('./models')
-      ])
-
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        setEnrollStatus('Please look directly at the camera')
-
-        const scanInterval = setInterval(async () => {
-          if (!videoRef.current || videoRef.current.readyState !== 4) return
-          const detection = await faceapi
-            .detectSingleFace(videoRef.current)
-            .withFaceLandmarks()
-            .withFaceDescriptor()
-
-          if (detection) {
-            clearInterval(scanInterval)
-            setEnrollStatus('Face detected. Saving securely...')
-            const descriptorArray = Array.from(detection.descriptor)
-
-            if (window.electron?.ipcRenderer) {
-              await window.electron.ipcRenderer.invoke('setup-vault-face', descriptorArray)
-            }
-
-            stream.getTracks().forEach((t) => t.stop())
-            setIsScanningFace(false)
-            setFaceCount((prev) => prev + 1)
-            alert('Face ID enrolled successfully.')
-          }
-        }, 1000)
-      }
-    } catch (e) {
-      setEnrollStatus('Could not access camera.')
-      setTimeout(() => setIsScanningFace(false), 2000)
-    }
-  }
-
   const inputContainerClass =
     'flex items-center bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all duration-200 w-full'
   const labelClass = 'text-sm text-zinc-300 font-medium flex items-center gap-2 mb-2'
