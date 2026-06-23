@@ -34,7 +34,6 @@ if (!gotTheLock) {
 }
 
 let mainWindow: BrowserWindow | null = null
-let isOverlayMode = false
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
