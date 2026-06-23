@@ -74,7 +74,6 @@ const IndexRoot = () => {
           handleMicToggle={handleMicToggle}
         />
       </div>
-
     </div>
   )
 }
