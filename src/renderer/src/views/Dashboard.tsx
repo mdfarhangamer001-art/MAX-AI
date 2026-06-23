@@ -7,7 +7,6 @@ import AICore from '@renderer/components/UI/AICoreSphere'
 export default function Dashboard({
   isConnected,
   toggleConnection,
-  systemStatus,
   isSpeaking,
   isMuted,
   handleMicToggle
