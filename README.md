@@ -96,13 +96,15 @@ It is a **Voice-First Desktop AI Assistant** that executes real-world actions ac
 We enforce two strict architectural tiers across all deployments:
 
 ## 1. IRIS Community Edition (Free & Open Source)
+
 - **Framework Access:** Access to the high-performance desktop framework shell (Electron + Vite + React 19 + Tailwind v4).
 - **Customization:** Fully customizable UI layouts, themes, widgets, and standard window management.
 - **Licensing:** Built under the permissive MIT License for public contributions.
 - **Restrictions:** Core AI routing, background execution loops, and autonomous system tools are disabled/hidden.
 
 ## 2. IRIS MAX (Commercial Core License)
-- **Cost:** $250 / Approx. ₹22,000 One-Time
+
+- **Cost:** $250 / Approx. ₹22,000 Monthly
 - **Full Binary Access:** Grants a lifetime, single-seat perpetual license to the fully compiled, highly protected native binary core.
 - **Core Unlock:** Unlocks the core voice orchestration loops, Gemini 3.1 Live API WebRTC bidirectional streaming, and local LanceDB vector search.
 - **Advanced Utilities:** Unlocks advanced, automated system utilities: Deep Research Agent, ScreenPeeler OCR, Phantom Typer, Livecoding, and Mobile Telekinesis.
