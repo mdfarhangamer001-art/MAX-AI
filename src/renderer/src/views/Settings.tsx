@@ -5,11 +5,6 @@ import { GiArtificialIntelligence } from 'react-icons/gi'
 import {
   RiKey2Line,
   RiSave3Line,
-  RiLockPasswordLine,
-  RiScan2Line,
-  RiAddLine,
-  RiCheckLine,
-  RiLock2Line,
   RiShieldKeyholeLine,
   RiPlugLine,
   RiTerminalWindowLine,
