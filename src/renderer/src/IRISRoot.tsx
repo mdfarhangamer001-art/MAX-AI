@@ -22,9 +22,7 @@ const IndexRoot = () => {
   const handleMicToggle = () => {
     const nextMutedState = !isMuted
     setIsMuted(nextMutedState)
-    if ((window as any).iris?.toggleMic) {
-      ;(window as any).iris.toggleMic(nextMutedState)
-    }
+
   }
 
   return (
