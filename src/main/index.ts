@@ -77,19 +77,6 @@ function createWindow(): void {
   }
 }
 
-app.on('second-instance', (event, commandLine) => {
-  if (!event) {
-  }
-  if (mainWindow) {
-    if (mainWindow.isMinimized()) mainWindow.restore()
-    mainWindow.focus()
-    const url = commandLine.find((arg) => arg.startsWith('iris://'))
-    if (url) {
-      mainWindow.webContents.send('oauth-callback', url)
-    }
-  }
-})
-
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.electron')
 
