@@ -6,11 +6,9 @@ import {
   RiSettings4Line,
   RiImageLine
 } from 'react-icons/ri'
-import ViewSkeleton from '@renderer/components/ViewSkelrton'
 
 import DashboardView from '../views/Dashboard'
 import PhoneView from '../views/Phone'
-import { Status } from '@renderer/types/panel'
 import SettingsView from '@renderer/views/Settings'
 
 const NotesView = lazy(() => import('../views/Notes'))
