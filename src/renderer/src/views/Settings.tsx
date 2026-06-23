@@ -57,7 +57,6 @@ function ProgressBar({ progress }: { progress: number }) {
 export default function SettingsView({ isSystemActive }: SettingsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('updates')
 
-  // Initialize as empty strings, NO localStorage
   const [geminiKey, setGeminiKey] = useState('')
   const [groqKey, setGroqKey] = useState('')
   const [hfKey, setHfKey] = useState('')
@@ -73,14 +72,6 @@ export default function SettingsView({ isSystemActive }: SettingsProps) {
   const [isScanningFace, setIsScanningFace] = useState(false)
   const [enrollStatus, setEnrollStatus] = useState('')
   const videoRef = useRef<HTMLVideoElement>(null)
-
-  const [appVersion, setAppVersion] = useState('1.5.1')
-  const [updateStatus, setUpdateStatus] = useState<
-    'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'error'
-  >('idle')
-  const [updateVersion, setUpdateVersion] = useState('')
-  const [updateNotes, setUpdateNotes] = useState('No new updates detected. Your system is current.')
-  const [downloadProgress, setDownloadProgress] = useState(0)
 
   useEffect(() => {
     if (!window.electron?.ipcRenderer) return undefined
@@ -98,35 +89,7 @@ export default function SettingsView({ isSystemActive }: SettingsProps) {
       .invoke('check-vault-status')
       .then((res: any) => setFaceCount(res?.faceCount || 0))
 
-    window.electron.ipcRenderer.invoke('get-app-version').then((v: string) => setAppVersion(v))
 
-    const handleUpdaterEvent = (_e: any, { status, data, error }: any) => {
-      if (status === 'checking') setUpdateStatus('checking')
-      if (status === 'available') {
-        setUpdateStatus('available')
-        setUpdateVersion(data.version)
-        setUpdateNotes(data.releaseNotes || 'Bug fixes and performance improvements.')
-      }
-      if (status === 'not-available') {
-        setUpdateStatus('idle')
-        setUpdateNotes('Your system is currently up to date.')
-      }
-      if (status === 'downloading') {
-        setUpdateStatus('downloading')
-        setDownloadProgress(Math.round(data.percent))
-      }
-      if (status === 'downloaded') setUpdateStatus('ready')
-      if (status === 'error') {
-        setUpdateStatus('error')
-        setUpdateNotes(`Update failed: ${error}`)
-      }
-    }
-
-    window.electron.ipcRenderer.on('updater-event', handleUpdaterEvent)
-
-    return () => {
-      window.electron.ipcRenderer.removeListener('updater-event', handleUpdaterEvent)
-    }
   }, [])
 
   const checkForUpdates = () => window.electron.ipcRenderer.invoke('check-for-updates')
