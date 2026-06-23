@@ -359,7 +359,6 @@ export default function LeftPanelsPremium({
     <div className="flex h-full flex-col gap-3 p-0">
       <PremiumGlassPanel accent="green" className="group" glow>
         <div className="p-3 flex flex-col h-full gap-2">
-          {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <PulseIndicator active={isActive && visionMode !== 'off'} />
