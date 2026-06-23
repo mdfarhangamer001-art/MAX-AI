@@ -12,7 +12,6 @@ import {
   dialog
 } from 'electron'
 import path, { join } from 'path'
-import fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
