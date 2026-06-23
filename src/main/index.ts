@@ -36,8 +36,6 @@ if (!gotTheLock) {
 let mainWindow: BrowserWindow | null = null
 let isOverlayMode = false
 
-const secureConfigPath = join(app.getPath('userData'), 'iris_secure_vault.json')
-
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -123,41 +121,6 @@ function toggleOverlayMode() {
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.electron')
 
-  autoUpdater.autoDownload = true
-  autoUpdater.autoInstallOnAppQuit = true
-  autoUpdater.checkForUpdatesAndNotify()
-
-  autoUpdater.on('update-available', (info) => {
-    dialog.showMessageBox({
-      type: 'info',
-      title: 'Update Found',
-      message: `Neural Core Update Found: v${info.version}. Downloading in background...`
-    })
-  })
-
-  autoUpdater.on('error', (err) => {
-    dialog.showErrorBox(
-      'Auto-Updater Error',
-      err == null ? 'unknown error' : (err.stack || err).toString()
-    )
-  })
-
-  autoUpdater.on('update-downloaded', () => {
-    dialog
-      .showMessageBox({
-        type: 'info',
-        title: 'Update Ready',
-        message: 'New version downloaded! The system will now force reboot to apply the patch.',
-        buttons: ['Execute Restart']
-      })
-      .then(() => {
-        setImmediate(() => {
-          app.removeAllListeners('window-all-closed')
-          autoUpdater.quitAndInstall(false, true)
-        })
-      })
-  })
-
   session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
     const allowedPermissions = [
       'media',
@@ -194,73 +157,6 @@ app.whenReady().then(() => {
       systemPreferences.askForMediaAccess('camera')
     }
   }
-
-  ipcMain.removeHandler('secure-save-keys')
-  ipcMain.removeHandler('secure-get-keys')
-  ipcMain.removeHandler('check-keys-exist')
-
-  ipcMain.handle('secure-save-keys', async (_, { groqKey, geminiKey, hfKey, tavilyKey }) => {
-    try {
-      let groqEncrypted, geminiEncrypted, hfEncrypted, tavilyEncrypted
-
-      if (safeStorage.isEncryptionAvailable()) {
-        groqEncrypted = groqKey ? safeStorage.encryptString(groqKey).toString('base64') : ''
-        geminiEncrypted = geminiKey ? safeStorage.encryptString(geminiKey).toString('base64') : ''
-        hfEncrypted = hfKey ? safeStorage.encryptString(hfKey).toString('base64') : ''
-        tavilyEncrypted = tavilyKey ? safeStorage.encryptString(tavilyKey).toString('base64') : ''
-      } else {
-        groqEncrypted = groqKey ? Buffer.from(groqKey).toString('base64') : ''
-        geminiEncrypted = geminiKey ? Buffer.from(geminiKey).toString('base64') : ''
-        hfEncrypted = hfKey ? Buffer.from(hfKey).toString('base64') : ''
-        tavilyEncrypted = tavilyKey ? Buffer.from(tavilyKey).toString('base64') : ''
-      }
-
-      const secureData = {
-        groq: groqEncrypted,
-        gemini: geminiEncrypted,
-        hf: hfEncrypted,
-        tavily: tavilyEncrypted
-      }
-
-      fs.writeFileSync(secureConfigPath, JSON.stringify(secureData))
-      return { success: true }
-    } catch (error: any) {
-      console.error('[Vault] Save Error:', error.message)
-      return { success: false, error: error.message }
-    }
-  })
-
-  ipcMain.handle('secure-get-keys', async () => {
-    if (!fs.existsSync(secureConfigPath)) return null
-    try {
-      const data = JSON.parse(fs.readFileSync(secureConfigPath, 'utf8'))
-      let groqKey = '',
-        geminiKey = '',
-        hfKey = '',
-        tavilyKey = ''
-
-      if (safeStorage.isEncryptionAvailable()) {
-        if (data.groq) groqKey = safeStorage.decryptString(Buffer.from(data.groq, 'base64'))
-        if (data.gemini) geminiKey = safeStorage.decryptString(Buffer.from(data.gemini, 'base64'))
-        if (data.hf) hfKey = safeStorage.decryptString(Buffer.from(data.hf, 'base64'))
-        if (data.tavily) tavilyKey = safeStorage.decryptString(Buffer.from(data.tavily, 'base64'))
-      } else {
-        if (data.groq) groqKey = Buffer.from(data.groq, 'base64').toString('utf8')
-        if (data.gemini) geminiKey = Buffer.from(data.gemini, 'base64').toString('utf8')
-        if (data.hf) hfKey = Buffer.from(data.hf, 'base64').toString('utf8')
-        if (data.tavily) tavilyKey = Buffer.from(data.tavily, 'base64').toString('utf8')
-      }
-
-      return { groqKey, geminiKey, hfKey, tavilyKey }
-    } catch (err) {
-      console.error('[Vault] Read Error:', err)
-      return null
-    }
-  })
-
-  ipcMain.handle('check-keys-exist', () => {
-    return fs.existsSync(secureConfigPath)
-  })
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const responseHeaders = { ...details.responseHeaders }
