@@ -3,8 +3,6 @@ import path, { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
-app.commandLine.appendSwitch('use-fake-ui-for-media-stream')
-
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
     app.setAsDefaultProtocolClient('iris', process.execPath, [path.resolve(process.argv[1])])
