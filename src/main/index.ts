@@ -3,7 +3,6 @@ import {
   shell,
   BrowserWindow,
   ipcMain,
-  desktopCapturer,
   globalShortcut,
 } from 'electron'
 import path, { join } from 'path'
