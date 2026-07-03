@@ -86,6 +86,8 @@ It is a **Voice-First Desktop AI Assistant** that executes real-world actions ac
 - Advanced Mobile Camera Control: Full control over front/back camera with customized video recording settings
 - More precise authentication including IP and Location verification
 - IRIS now divided into Free and PRO tiers with distinct badges
+- Introduced Custom Protocols to build and execute multi-step automated workflows
+- Introduced AI Wallpaper Engine to dynamically change PC wallpaper with natural language
 - New quick-access overlay available via Ctrl + Shift + I
 - Complete UI Upgrade: Simple, premium, and fully animated interface
 - Updated Settings panel with a new proper build structure
@@ -213,6 +215,10 @@ AI-driven coordinate cursor control, scroll tracking, and screen peeler OCR.
   - _Commands:_ "Click the login button", "Scroll down fifty percent", "Click at coordinates 800 by 600"
 - **Screen Peeler & Phantom Typer:** Instant OCR extraction to code editor.
   - _Commands:_ "Extract code from active window", "Type my secure email address in the active input box"
+- **Custom Protocols:** Build and execute multi-step automated workflows natively in the OS.
+  - _Commands:_ "Activate Coding Mode", "Start Hardcore Gaming Protocol"
+- **AI Wallpaper Engine:** Dynamically change PC wallpaper with natural language queries.
+  - _Commands:_ "Change my wallpaper to a cyberpunk city", "Set background to a mountain sunset"
 
 ### 💾 Memory & Information
 
