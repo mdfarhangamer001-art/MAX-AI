@@ -1,19 +1,19 @@
-name: Build MAX AI EXE
+- name: Build MAX AI EXE
   run: npm run build
 
 
 - name: Find EXE
   shell: bash
   run: |
-    echo "Searching EXE..."
+    echo "Searching EXE files..."
     find . -name "*.exe"
 
 
-- name: Create Release and Upload EXE
+- name: Create MAX AI Release and Upload EXE
   uses: softprops/action-gh-release@v2
   with:
-    tag_name: v${{ steps.version.outputs.version }}
-    name: MAX AI v${{ steps.version.outputs.version }}
+    tag_name: v${{ github.run_number }}
+    name: MAX AI v${{ github.run_number }}
     generate_release_notes: true
     files: |
       **/*.exe
