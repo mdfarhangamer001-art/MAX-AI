@@ -1,4 +1,4 @@
-- name: Build MAX AI EXE
+name: Build MAX AI EXE
   run: npm run build
 
 
