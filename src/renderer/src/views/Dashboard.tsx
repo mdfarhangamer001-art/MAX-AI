@@ -1,8 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Camera, Mic, MicOff, Phone, PhoneOff, Monitor, X } from 'lucide-react'
 import RightPanel from '@renderer/components/UI/RightPanel'
 import LeftPanels from '@renderer/components/UI/LeftPanels'
 import AICore from '@renderer/components/UI/AICoreSphere'
+import { SystemStats, DriveStats } from '@main/lib/system' // Assuming these types are now available from the main process
+
+interface Props {
+  className?: string
+}
 
 export default function Dashboard({
   isConnected,
@@ -20,10 +25,33 @@ export default function Dashboard({
   const [visionMode, setVisionMode] = useState<'off' | 'camera' | 'screen'>('off')
   const [showVisionMenu, setShowVisionMenu] = useState(false)
 
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<SystemStats | null>(null)
+  const [drives, setDrives] = useState<DriveStats[] | null>(null)
+
   const changeVisionMode = (mode: 'off' | 'camera' | 'screen') => {
     setVisionMode(mode)
     setShowVisionMenu(false)
   }
+
+  // Fetch system stats and drive info when the component mounts
+  useEffect(() => {
+    async function fetchSystemInfo() {
+      try {
+        setLoading(true)
+        // Invoke IPC handlers to get system and drive statistics
+        const systemStats = await window.electron.ipcRenderer.invoke('get-system-stats')
+        const driveStats = await window.electron.ipcRenderer.invoke('get-drives')
+        setStats(systemStats)
+        setDrives(driveStats)
+      } catch (error) {
+        console.error('Error fetching system info:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchSystemInfo()
+  }, [])
 
   return (
     <div className="h-full w-full bg-transparent flex flex-col relative selection:bg-[#00ff41]/30">
@@ -152,6 +180,50 @@ export default function Dashboard({
           <RightPanel />
         </div>
       </main>
+
+      {/* System Stats and Storage Info Panel - Conditionally rendered */}
+      {!loading && stats && drives && (
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-6 rounded-xl border border-white/5 bg-black/40 backdrop-blur-xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.7)]">
+          {/* System Stats */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 mb-2">
+              <Icons name="cpu" />
+              <h3 className="font-bold text-lg">CPU Usage</h3>
+            </div>
+            <p className="text-xs">Usage: <b className="text-white">{stats.cpu}%</b></p>
+            <p className="text-xs">Temp: <b className="text-white">{stats.temperature}°C</b></p>
+            <p className="text-xs">OS: <b className="text-white">{stats.os.type}</b> (Uptime: {stats.os.uptime})</p>
+          </div>
+
+          {/* RAM Info */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 mb-2">
+              <Icons name="memory" />
+              <h3 className="font-bold text-lg">RAM</h3>
+            </div>
+            <p className="text-xs">Used: <b className="text-white">{stats.memory.usedPercentage}%</b></p>
+            <p className="text-xs">Free: <b className="text-white">{stats.memory.free}GB</b> / {stats.memory.total}GB</p>
+          </div>
+
+          {/* Storage Info */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 mb-2">
+              <Icons name="folder" />
+              <h3 className="font-bold text-lg">Storage</h3>
+            </div>
+            {drives.map((drive, index) => (
+              <p key={index} className="text-xs">
+                {drive.Name}: Free <b className="text-white">{drive.FreeGB}GB</b> / {drive.TotalGB}GB
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+      {loading && (
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-6 rounded-xl border border-white/5 bg-black/40 backdrop-blur-xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.7)]">
+          <p className="text-xs text-white/50">Loading system information...</p>
+        </div>
+      )}
     </div>
   )
 }
