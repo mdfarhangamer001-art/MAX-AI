@@ -18,3 +18,5 @@ credentials.json
 
 
 gmail_token.json
+.ideavo/project
+*.log
